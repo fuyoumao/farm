@@ -384,7 +384,7 @@
         .modal {
             display: none;
             position: fixed;
-            z-index: 1000;
+            z-index: 9999;
             left: 0;
             top: 0;
             width: 100%;
@@ -927,7 +927,7 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(2px);
-            z-index: 10000;
+            z-index: 9998;
             display: none;
             align-items: center;
             justify-content: center;
@@ -1121,6 +1121,7 @@
                                 <button class="debug-btn" onclick="debugCustomerUnlock()">调试配方解锁</button>
                                 <button class="debug-btn" onclick="syncCustomerStatsFromDatabase()">同步顾客统计</button>
                                 <button class="debug-btn" onclick="testGrillUnlock()">测试烤肉架解锁</button>
+                                <button class="debug-btn" onclick="forceUnlockHunting()" style="background: #10b981;">强制解锁打猎</button>
                                 <button class="debug-btn" onclick="showCloudSaveSettings()" style="background: #3b82f6; color: white;">☁️ 云端存档设置</button>
                                 <button class="debug-btn" onclick="resetGameData()" style="background: #ef4444; color: white;">重置数据</button>
             </div>
@@ -3241,9 +3242,14 @@
             }
 
             // 显示顾客消息
-            let customerMessage = `${customerName} 来到茶店，想要一杯 ${teaChoice}`;
-            if (gameData.customer.toppingChoices.length > 0) {
-                customerMessage += `，加${gameData.customer.toppingChoices.join('、')}`;
+            let customerMessage = `${customerName} 来到茶店`;
+            if (orderType === 'tea') {
+                customerMessage += `，想要一杯 ${gameData.customer.teaChoice}`;
+                if (gameData.customer.toppingChoices.length > 0) {
+                    customerMessage += `，加${gameData.customer.toppingChoices.join('、')}`;
+                }
+            } else if (orderType === 'grilled') {
+                customerMessage += `，想要 ${gameData.customer.grilledChoice}`;
             }
             addDebugLog(customerMessage);
 
@@ -4639,9 +4645,16 @@
         function startHunting() {
             if (!gameData.huntingSystem.backMountain.unlocked || gameData.huntingSystem.backMountain.isHunting) return;
 
+            // 确保huntDuration存在
+            if (!gameData.huntingSystem.backMountain.huntDuration) {
+                gameData.huntingSystem.backMountain.huntDuration = 15000; // 15秒
+                console.log('设置默认打猎时间: 15秒');
+            }
+
             gameData.huntingSystem.backMountain.isHunting = true;
             gameData.huntingSystem.backMountain.huntStartTime = Date.now();
 
+            console.log(`🏹 开始后山打猎... 持续时间：${gameData.huntingSystem.backMountain.huntDuration}毫秒`);
             addDebugLog(`🏹 开始后山打猎... 持续时间：${gameData.huntingSystem.backMountain.huntDuration}毫秒`);
             updateHuntingDisplay();
 
@@ -4691,6 +4704,30 @@
             addDebugLog(`🎯 开始完成${location}打猎流程...`);
             huntingData.isHunting = false;
             huntingData.huntCount++;
+
+            // 确保huntResults存在
+            if (!huntingData.huntResults) {
+                huntingData.huntResults = {
+                    basic: [
+                        { name: '兔子', chance: 0.3 },
+                        { name: '浆果', chance: 0.25 },
+                        { name: '小鱼干', chance: 0.2 },
+                        { name: '鸡', chance: 0.15 },
+                        { name: '地图', chance: 0.05 },
+                        { name: '簪子', chance: 0.02 },
+                        { name: '梳子', chance: 0.02 },
+                        { name: '石头', chance: 0.005 },
+                        { name: '花朵', chance: 0.005 }
+                    ],
+                    advanced: [
+                        { name: '山羊', chance: 0.15 },
+                        { name: '野猪', chance: 0.1 },
+                        { name: '野葱', chance: 0.1 },
+                        { name: '山姜', chance: 0.1 },
+                        { name: '香菜', chance: 0.1 }
+                    ]
+                };
+            }
 
             // 确定猎物池
             const huntPool = huntingData.huntCount >= 50 ?
@@ -4877,6 +4914,32 @@
             }
 
             // 直接解锁功能（绕过检查）
+            // 确保对象结构存在
+            if (!gameData.grillSystem) {
+                gameData.grillSystem = {};
+            }
+            if (!gameData.huntingSystem) {
+                gameData.huntingSystem = {};
+            }
+            if (!gameData.huntingSystem.backMountain) {
+                gameData.huntingSystem.backMountain = {
+                    unlocked: false,
+                    isHunting: false,
+                    huntStartTime: 0,
+                    huntDuration: 15000, // 15秒
+                    huntCount: 0
+                };
+            }
+            if (!gameData.huntingSystem.cave) {
+                gameData.huntingSystem.cave = {
+                    unlocked: false,
+                    isHunting: false,
+                    huntStartTime: 0,
+                    huntDuration: 20000, // 20秒
+                    huntCount: 0
+                };
+            }
+
             gameData.grillSystem.unlocked = true;
             gameData.huntingSystem.backMountain.unlocked = true;
 
@@ -5202,19 +5265,30 @@
             const huntingSection = document.getElementById('hunting-section');
             const caveHuntingSection = document.getElementById('cave-hunting-section');
 
+            console.log('更新烤肉架和打猎显示...');
+            console.log('烤肉架解锁状态:', gameData.grillSystem.unlocked);
+            console.log('后山打猎解锁状态:', gameData.huntingSystem.backMountain.unlocked);
+            console.log('山洞打猎解锁状态:', gameData.huntingSystem.cave.unlocked);
+
             if (gameData.grillSystem.unlocked) {
                 grillSection.style.display = 'block';
                 renderGrillTable();
+                console.log('烤肉架区域已显示');
             }
 
             if (gameData.huntingSystem.backMountain.unlocked) {
                 huntingSection.style.display = 'block';
                 updateHuntingDisplay();
+                console.log('后山打猎区域已显示');
+            } else {
+                console.log('后山打猎未解锁，隐藏区域');
+                huntingSection.style.display = 'none';
             }
 
             if (gameData.huntingSystem.cave.unlocked && caveHuntingSection) {
                 caveHuntingSection.style.display = 'block';
                 updateCaveHuntingDisplay();
+                console.log('山洞打猎区域已显示');
             }
         }
 
@@ -6293,7 +6367,48 @@
             alert('已添加测试材料！现在可以尝试制作茶饮了。');
             saveGameDataToDatabase();
         }
-        
+
+        // 强制解锁打猎功能
+        function forceUnlockHunting() {
+            addDebugLog('🏹 强制解锁打猎功能...');
+
+            // 确保对象结构存在
+            if (!gameData.grillSystem) {
+                gameData.grillSystem = {};
+            }
+            if (!gameData.huntingSystem) {
+                gameData.huntingSystem = {};
+            }
+            if (!gameData.huntingSystem.backMountain) {
+                gameData.huntingSystem.backMountain = {
+                    unlocked: false,
+                    isHunting: false,
+                    huntStartTime: 0,
+                    huntDuration: 15000, // 15秒
+                    huntCount: 0
+                };
+            }
+            if (!gameData.huntingSystem.cave) {
+                gameData.huntingSystem.cave = {
+                    unlocked: false,
+                    isHunting: false,
+                    huntStartTime: 0,
+                    huntDuration: 20000, // 20秒
+                    huntCount: 0
+                };
+            }
+
+            // 强制解锁打猎和烤肉架
+            gameData.grillSystem.unlocked = true;
+            gameData.huntingSystem.backMountain.unlocked = true;
+
+            // 更新界面显示
+            updateGrillAndHuntingDisplay();
+
+            addDebugLog('🏹 打猎功能已强制解锁');
+            showWin95Modal('解锁成功', '打猎和烤肉架功能已强制解锁！', '🏹');
+        }
+
         function updateDebugDisplay() {
             try {
                 // 更新天气和季节显示
