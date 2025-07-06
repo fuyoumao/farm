@@ -1304,19 +1304,39 @@
 
         <!-- 打猎区域 -->
         <div class="section" id="hunting-section" style="display: none;">
-            <h2 class="section-title">后山打猎</h2>
-            <div class="hunting-area" style="padding: 20px; text-align: center;">
+            <h2 class="section-title">打猎系统</h2>
+
+            <!-- 后山打猎 -->
+            <div class="hunting-area" style="padding: 15px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 8px;">
+                <h3 style="margin: 0 0 15px 0; color: #228b22;">🏹 后山打猎</h3>
                 <div class="hunting-status" id="hunting-status" style="margin-bottom: 15px;">
                     <div class="alert alert-secondary">准备打猎...</div>
                 </div>
                 <div class="hunting-controls" style="margin-bottom: 15px;">
                     <button class="action-btn primary" onclick="startHunting()" id="hunt-btn">
-                        🏹 开始打猎 (6秒)
+                        🏹 开始打猎 (15秒)
                     </button>
                 </div>
                 <div class="hunting-stats">
                     <span>打猎次数: <span id="hunt-count">0</span></span>
                     <span style="margin-left: 20px;">解锁高级猎物: <span id="advanced-hunt-status">需要50次</span></span>
+                </div>
+            </div>
+
+            <!-- 山洞打猎 -->
+            <div class="cave-hunting-area" id="cave-hunting-section" style="padding: 15px; border: 2px solid #8b4513; border-radius: 8px; display: none;">
+                <h3 style="margin: 0 0 15px 0; color: #8b4513;">🏔️ 山洞打猎</h3>
+                <div class="cave-hunting-status" id="cave-hunting-status" style="margin-bottom: 15px;">
+                    <div class="alert alert-secondary">准备探索山洞...</div>
+                </div>
+                <div class="cave-hunting-controls" style="margin-bottom: 15px;">
+                    <button class="action-btn primary" onclick="startCaveHunting()" id="cave-hunt-btn">
+                        🏔️ 探索山洞 (20秒)
+                    </button>
+                </div>
+                <div class="cave-hunting-stats">
+                    <span>山洞探索次数: <span id="cave-hunt-count">0</span></span>
+                    <span style="margin-left: 20px; color: #8b4513;">特产：银耳</span>
                 </div>
             </div>
         </div>
@@ -1786,27 +1806,67 @@
 
             // 打猎系统
             huntingSystem: {
-                unlocked: false,
-                huntCount: 0,
-                isHunting: false,
-                huntStartTime: 0,
-                huntDuration: 6000, // 6秒 (测试用)
-                huntResults: {
-                    // 基础猎物 (0-49次) - 修改为完整动物
-                    basic: [
-                        { name: '兔子', chance: 0.3, firstTimeRecipe: null },
-                        { name: '浆果', chance: 0.25, firstTimeRecipe: '浆果汁' },
-                        { name: '小鱼干', chance: 0.25, firstTimeRecipe: null },
-                        { name: '鸡', chance: 0.2, firstTimeRecipe: null }
-                    ],
-                    // 高级猎物 (50次后) - 修改为完整动物
-                    advanced: [
-                        { name: '山羊', chance: 0.15, firstTimeRecipe: null },
-                        { name: '野猪', chance: 0.1, firstTimeRecipe: null },
-                        { name: '野葱', chance: 0.25, firstTimeRecipe: null },
-                        { name: '山姜', chance: 0.25, firstTimeRecipe: null },
-                        { name: '香菜', chance: 0.25, firstTimeRecipe: null }
-                    ]
+                // 后山打猎
+                backMountain: {
+                    unlocked: false,
+                    huntCount: 0,
+                    isHunting: false,
+                    huntStartTime: 0,
+                    huntDuration: 15000, // 15秒
+                    huntResults: {
+                        // 基础猎物 (0-49次)
+                        basic: [
+                            { name: '兔子', chance: 0.25, firstTimeRecipe: null },
+                            { name: '浆果', chance: 0.2, firstTimeRecipe: '浆果汁' },
+                            { name: '小鱼干', chance: 0.2, firstTimeRecipe: null },
+                            { name: '鸡', chance: 0.2, firstTimeRecipe: null },
+                            { name: '簪子', chance: 0.03, firstTimeRecipe: null },
+                            { name: '梳子', chance: 0.03, firstTimeRecipe: null },
+                            { name: '石头', chance: 0.05, firstTimeRecipe: null },
+                            { name: '花朵', chance: 0.04, firstTimeRecipe: null },
+                            { name: '金币', chance: 0.06, firstTimeRecipe: null, value: 15 },
+                            { name: '地图', chance: 0.05, firstTimeRecipe: null, special: 'unlock_cave' }
+                        ],
+                        // 高级猎物 (50次后)
+                        advanced: [
+                            { name: '山羊', chance: 0.08, firstTimeRecipe: null },
+                            { name: '野猪', chance: 0.04, firstTimeRecipe: null },
+                            { name: '野葱', chance: 0.08, firstTimeRecipe: null },
+                            { name: '山姜', chance: 0.08, firstTimeRecipe: null },
+                            { name: '香菜', chance: 0.08, firstTimeRecipe: null }
+                        ]
+                    }
+                },
+                // 山洞打猎
+                cave: {
+                    unlocked: false,
+                    huntCount: 0,
+                    isHunting: false,
+                    huntStartTime: 0,
+                    huntDuration: 20000, // 20秒
+                    huntResults: {
+                        // 基础猎物
+                        basic: [
+                            { name: '兔子', chance: 0.25, firstTimeRecipe: null },
+                            { name: '浆果', chance: 0.18, firstTimeRecipe: null },
+                            { name: '小鱼干', chance: 0.18, firstTimeRecipe: null },
+                            { name: '鸡', chance: 0.2, firstTimeRecipe: null },
+                            { name: '银耳', chance: 0.15, firstTimeRecipe: null }, // 山洞特有
+                            { name: '簪子', chance: 0.04, firstTimeRecipe: null },
+                            { name: '梳子', chance: 0.04, firstTimeRecipe: null },
+                            { name: '石头', chance: 0.06, firstTimeRecipe: null },
+                            { name: '花朵', chance: 0.03, firstTimeRecipe: null },
+                            { name: '金币', chance: 0.08, firstTimeRecipe: null, value: 20 }
+                        ],
+                        // 高级猎物 (50次后)
+                        advanced: [
+                            { name: '山羊', chance: 0.08, firstTimeRecipe: null },
+                            { name: '野猪', chance: 0.04, firstTimeRecipe: null },
+                            { name: '野葱', chance: 0.08, firstTimeRecipe: null },
+                            { name: '山姜', chance: 0.08, firstTimeRecipe: null },
+                            { name: '香菜', chance: 0.08, firstTimeRecipe: null }
+                        ]
+                    }
                 }
             }
         };
@@ -2528,6 +2588,36 @@
                             <td>-</td>
                             <td>
                                 <span style="color: #1e40af; font-size: 12px;">打猎材料</span>
+                            </td>
+                        `;
+                        materialsInventory.appendChild(row);
+                    });
+                }
+            }
+
+            // 显示特殊物品（treasures）
+            if (gameData.treasures && Object.keys(gameData.treasures).length > 0) {
+                const treasureItems = Object.entries(gameData.treasures).filter(([name, count]) => count > 0);
+
+                if (treasureItems.length > 0) {
+                    const separatorRow = document.createElement('tr');
+                    separatorRow.innerHTML = `
+                        <td colspan="6" style="background-color: #fef3c7; text-align: center; font-weight: bold; color: #92400e;">
+                            ✨ 特殊物品收藏
+                        </td>
+                    `;
+                    materialsInventory.appendChild(separatorRow);
+
+                    treasureItems.forEach(([treasure, count]) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${treasure}</td>
+                            <td>-</td>
+                            <td style="background-color: #fef3c7; font-weight: 600;">${count} ✓</td>
+                            <td>打猎获得</td>
+                            <td>-</td>
+                            <td>
+                                <span style="color: #92400e; font-size: 12px;">珍贵收藏品</span>
                             </td>
                         `;
                         materialsInventory.appendChild(row);
@@ -4264,45 +4354,69 @@
             });
         }
 
-        // 开始打猎
+        // 开始后山打猎
         function startHunting() {
-            if (!gameData.huntingSystem.unlocked || gameData.huntingSystem.isHunting) return;
+            if (!gameData.huntingSystem.backMountain.unlocked || gameData.huntingSystem.backMountain.isHunting) return;
 
-            gameData.huntingSystem.isHunting = true;
-            gameData.huntingSystem.huntStartTime = Date.now();
+            gameData.huntingSystem.backMountain.isHunting = true;
+            gameData.huntingSystem.backMountain.huntStartTime = Date.now();
 
-            addDebugLog(`🏹 开始后山打猎... 持续时间：${gameData.huntingSystem.huntDuration}毫秒`);
+            addDebugLog(`🏹 开始后山打猎... 持续时间：${gameData.huntingSystem.backMountain.huntDuration}毫秒`);
             updateHuntingDisplay();
 
             // 设置定时器
             setTimeout(() => {
-                addDebugLog('⏰ setTimeout定时器触发');
-                if (gameData.huntingSystem.isHunting) {
-                    addDebugLog('⏰ 定时器检查：打猎状态为true，调用completeHunting');
-                    completeHunting();
+                addDebugLog('⏰ 后山打猎定时器触发');
+                if (gameData.huntingSystem.backMountain.isHunting) {
+                    addDebugLog('⏰ 定时器检查：后山打猎状态为true，调用completeHunting');
+                    completeHunting('backMountain');
                 } else {
-                    addDebugLog('⏰ 定时器检查：打猎状态为false，跳过');
+                    addDebugLog('⏰ 定时器检查：后山打猎状态为false，跳过');
                 }
-            }, gameData.huntingSystem.huntDuration);
+            }, gameData.huntingSystem.backMountain.huntDuration);
+        }
+
+        // 开始山洞打猎
+        function startCaveHunting() {
+            if (!gameData.huntingSystem.cave.unlocked || gameData.huntingSystem.cave.isHunting) return;
+
+            gameData.huntingSystem.cave.isHunting = true;
+            gameData.huntingSystem.cave.huntStartTime = Date.now();
+
+            addDebugLog(`🏔️ 开始山洞打猎... 持续时间：${gameData.huntingSystem.cave.huntDuration}毫秒`);
+            updateCaveHuntingDisplay();
+
+            // 设置定时器
+            setTimeout(() => {
+                addDebugLog('⏰ 山洞打猎定时器触发');
+                if (gameData.huntingSystem.cave.isHunting) {
+                    addDebugLog('⏰ 定时器检查：山洞打猎状态为true，调用completeHunting');
+                    completeHunting('cave');
+                } else {
+                    addDebugLog('⏰ 定时器检查：山洞打猎状态为false，跳过');
+                }
+            }, gameData.huntingSystem.cave.huntDuration);
         }
 
         // 完成打猎
-        function completeHunting() {
-            if (!gameData.huntingSystem.isHunting) {
-                addDebugLog('⚠️ completeHunting被调用但打猎状态为false');
+        function completeHunting(location = 'backMountain') {
+            const huntingData = gameData.huntingSystem[location];
+
+            if (!huntingData.isHunting) {
+                addDebugLog(`⚠️ completeHunting被调用但${location}打猎状态为false`);
                 return;
             }
 
-            addDebugLog('🎯 开始完成打猎流程...');
-            gameData.huntingSystem.isHunting = false;
-            gameData.huntingSystem.huntCount++;
+            addDebugLog(`🎯 开始完成${location}打猎流程...`);
+            huntingData.isHunting = false;
+            huntingData.huntCount++;
 
             // 确定猎物池
-            const huntPool = gameData.huntingSystem.huntCount >= 50 ?
-                [...gameData.huntingSystem.huntResults.basic, ...gameData.huntingSystem.huntResults.advanced] :
-                gameData.huntingSystem.huntResults.basic;
+            const huntPool = huntingData.huntCount >= 50 ?
+                [...huntingData.huntResults.basic, ...huntingData.huntResults.advanced] :
+                huntingData.huntResults.basic;
 
-            addDebugLog(`🎯 使用猎物池：${huntPool.map(item => item.name).join(', ')}`);
+            addDebugLog(`🎯 ${location}使用猎物池：${huntPool.map(item => item.name).join(', ')}`);
 
             // 随机选择猎物
             const random = Math.random();
@@ -4331,17 +4445,59 @@
                 gameData.materials = {};
                 addDebugLog(`🎯 初始化materials对象`);
             }
-            if (!gameData.materials[huntResult.name]) {
-                gameData.materials[huntResult.name] = 0;
+            if (!gameData.treasures) {
+                gameData.treasures = {};
+                addDebugLog(`🎯 初始化treasures对象`);
             }
-            const oldCount = gameData.materials[huntResult.name];
-            gameData.materials[huntResult.name]++;
-            const newCount = gameData.materials[huntResult.name];
+            // 处理不同类型的打猎结果
+            let resultMessage = '';
+            let specialAction = '';
 
-            addDebugLog(`🎯 打猎成功！获得：${huntResult.name} (${oldCount} → ${newCount})`);
+            if (huntResult.name === '金币') {
+                // 直接获得金币
+                const goldAmount = huntResult.value || 15;
+                gameData.funds += goldAmount;
+                resultMessage = `获得：${goldAmount}金币`;
+                addDebugLog(`🎯 打猎获得金币：+${goldAmount}，当前资金：${gameData.funds}`);
+            } else if (huntResult.name === '地图') {
+                // 解锁山洞打猎
+                if (!gameData.treasures[huntResult.name]) {
+                    gameData.treasures[huntResult.name] = 0;
+                }
+                gameData.treasures[huntResult.name]++;
+
+                if (!gameData.huntingSystem.cave.unlocked) {
+                    gameData.huntingSystem.cave.unlocked = true;
+                    specialAction = 'unlock_cave';
+                    resultMessage = `获得：神秘地图 - 解锁山洞打猎！`;
+                    addDebugLog(`🗺️ 获得地图，解锁山洞打猎功能！`);
+                } else {
+                    resultMessage = `获得：地图碎片`;
+                    addDebugLog(`🗺️ 获得额外地图碎片`);
+                }
+            } else if (['簪子', '梳子', '石头', '花朵'].includes(huntResult.name)) {
+                // 特殊物品存储到treasures
+                if (!gameData.treasures[huntResult.name]) {
+                    gameData.treasures[huntResult.name] = 0;
+                }
+                const oldCount = gameData.treasures[huntResult.name];
+                gameData.treasures[huntResult.name]++;
+                const newCount = gameData.treasures[huntResult.name];
+                resultMessage = `获得：${huntResult.name}`;
+                addDebugLog(`🎯 打猎获得特殊物品：${huntResult.name} (${oldCount} → ${newCount})`);
+            } else {
+                // 普通材料存储到materials
+                if (!gameData.materials[huntResult.name]) {
+                    gameData.materials[huntResult.name] = 0;
+                }
+                const oldCount = gameData.materials[huntResult.name];
+                gameData.materials[huntResult.name]++;
+                const newCount = gameData.materials[huntResult.name];
+                resultMessage = `获得：${huntResult.name}`;
+                addDebugLog(`🎯 打猎获得材料：${huntResult.name} (${oldCount} → ${newCount})`);
+            }
 
             // 检查首次获得配方解锁
-            addDebugLog(`🎯 检查配方解锁：${huntResult.name}，firstTimeRecipe: ${huntResult.firstTimeRecipe}`);
             if (huntResult.firstTimeRecipe && !gameData.teaRecipes[huntResult.firstTimeRecipe]) {
                 gameData.teaRecipes[huntResult.firstTimeRecipe] = ['浆果'];
                 addDebugLog(`🎉 首次获得${huntResult.name}，解锁配方：${huntResult.firstTimeRecipe}！`);
@@ -4360,16 +4516,34 @@
 
             // 显示打猎结果弹窗
             addDebugLog(`🎯 准备显示打猎结果弹窗`);
-            const huntResultContent = `
+            const locationName = location === 'backMountain' ? '后山' : '山洞';
+            const locationIcon = location === 'backMountain' ? '🎯' : '🏔️';
+
+            let huntResultContent = `
                 <div style="text-align: center; line-height: 1.6;">
-                    <h3 style="color: #0040c0; margin: 0 0 15px 0;">🎯 打猎成功！</h3>
+                    <h3 style="color: #0040c0; margin: 0 0 15px 0;">${locationIcon} ${locationName}打猎成功！</h3>
                     <div style="margin-bottom: 15px; padding: 12px; background: #f0f0f0; border: 1px inset #c0c0c0;">
-                        <div style="font-size: 18px; font-weight: bold; color: #d2691e; margin-bottom: 8px;">获得：${huntResult.name}</div>
-                        <div style="color: #666; font-size: 14px;">打猎次数：${gameData.huntingSystem.huntCount}</div>
-                        ${gameData.huntingSystem.huntCount >= 50 ? '<div style="color: #22c55e; font-size: 12px;">已解锁高级猎物</div>' : ''}
+                        <div style="font-size: 18px; font-weight: bold; color: #d2691e; margin-bottom: 8px;">${resultMessage}</div>
+                        <div style="color: #666; font-size: 14px;">${locationName}打猎次数：${huntingData.huntCount}</div>
+                        ${huntingData.huntCount >= 50 ? '<div style="color: #22c55e; font-size: 12px;">已解锁高级猎物</div>' : ''}
                     </div>
                 </div>
             `;
+
+            // 如果解锁了山洞，显示特殊提示
+            if (specialAction === 'unlock_cave') {
+                huntResultContent = `
+                    <div style="text-align: center; line-height: 1.6;">
+                        <h3 style="color: #0040c0; margin: 0 0 15px 0;">🗺️ 重大发现！</h3>
+                        <div style="margin-bottom: 15px; padding: 12px; background: #f0f9ff; border: 1px inset #c0c0c0;">
+                            <div style="font-size: 18px; font-weight: bold; color: #d2691e; margin-bottom: 8px;">获得：神秘地图</div>
+                            <div style="color: #1e40af; font-weight: bold; margin-bottom: 8px;">🏔️ 解锁山洞打猎功能！</div>
+                            <div style="color: #666; font-size: 12px;">山洞打猎时间：20秒，可获得珍贵的银耳</div>
+                        </div>
+                    </div>
+                `;
+            }
+
             showWin95Modal('打猎结果', huntResultContent, '🎯');
             addDebugLog(`🎯 打猎结果弹窗已显示`);
 
@@ -4423,7 +4597,7 @@
 
             // 直接解锁功能（绕过检查）
             gameData.grillSystem.unlocked = true;
-            gameData.huntingSystem.unlocked = true;
+            gameData.huntingSystem.backMountain.unlocked = true;
 
             addDebugLog(`🔥 强制解锁烤肉架和打猎功能！`);
 
@@ -4715,7 +4889,7 @@
             // 姬别情6次访问解锁烤肉架
             if (customerName === '姬别情' && visitCount >= 6 && !gameData.grillSystem.unlocked) {
                 gameData.grillSystem.unlocked = true;
-                gameData.huntingSystem.unlocked = true;
+                gameData.huntingSystem.backMountain.unlocked = true;
 
                 addDebugLog(`🔥 姬别情6次访问，解锁烤肉架和打猎功能！`);
 
@@ -4745,15 +4919,21 @@
         function updateGrillAndHuntingDisplay() {
             const grillSection = document.getElementById('grill-section');
             const huntingSection = document.getElementById('hunting-section');
+            const caveHuntingSection = document.getElementById('cave-hunting-section');
 
             if (gameData.grillSystem.unlocked) {
                 grillSection.style.display = 'block';
                 renderGrillTable();
             }
 
-            if (gameData.huntingSystem.unlocked) {
+            if (gameData.huntingSystem.backMountain.unlocked) {
                 huntingSection.style.display = 'block';
                 updateHuntingDisplay();
+            }
+
+            if (gameData.huntingSystem.cave.unlocked && caveHuntingSection) {
+                caveHuntingSection.style.display = 'block';
+                updateCaveHuntingDisplay();
             }
         }
 
@@ -5006,41 +5186,36 @@
             });
         }
 
-        // 更新打猎显示
+        // 更新后山打猎显示
         function updateHuntingDisplay() {
             const huntCount = document.getElementById('hunt-count');
             const advancedStatus = document.getElementById('advanced-hunt-status');
             const huntBtn = document.getElementById('hunt-btn');
             const huntingStatus = document.getElementById('hunting-status');
 
-            if (huntCount) huntCount.textContent = gameData.huntingSystem.huntCount;
+            const backMountain = gameData.huntingSystem.backMountain;
+
+            if (huntCount) huntCount.textContent = backMountain.huntCount;
 
             if (advancedStatus) {
-                if (gameData.huntingSystem.huntCount >= 50) {
+                if (backMountain.huntCount >= 50) {
                     advancedStatus.textContent = '已解锁';
                     advancedStatus.style.color = '#22c55e';
                 } else {
-                    advancedStatus.textContent = `需要${50 - gameData.huntingSystem.huntCount}次`;
+                    advancedStatus.textContent = `需要${50 - backMountain.huntCount}次`;
                 }
             }
 
-            if (gameData.huntingSystem.isHunting) {
-                const elapsed = Date.now() - gameData.huntingSystem.huntStartTime;
-                const remaining = Math.max(0, gameData.huntingSystem.huntDuration - elapsed);
-
-                // 详细调试信息
-                if (remaining <= 100) { // 只在最后100毫秒打印详细信息
-                    addDebugLog(`⏰ 倒计时详情: elapsed=${elapsed}ms, remaining=${remaining}ms, duration=${gameData.huntingSystem.huntDuration}ms`);
-                }
+            if (backMountain.isHunting) {
+                const elapsed = Date.now() - backMountain.huntStartTime;
+                const remaining = Math.max(0, backMountain.huntDuration - elapsed);
 
                 if (remaining <= 0) {
-                    // 时间到了，立即完成打猎
-                    addDebugLog('⏰ 打猎时间到，触发完成打猎');
-                    completeHunting();
+                    addDebugLog('⏰ 后山打猎时间到，触发完成打猎');
+                    completeHunting('backMountain');
                     return;
                 }
 
-                // 使用Math.floor确保显示0秒时立即完成
                 const seconds = Math.max(1, Math.ceil(remaining / 1000));
 
                 if (huntBtn) {
@@ -5054,11 +5229,53 @@
             } else {
                 if (huntBtn) {
                     huntBtn.disabled = false;
-                    huntBtn.textContent = '🏹 开始打猎 (6秒)';
+                    huntBtn.textContent = '🏹 开始打猎 (15秒)';
                 }
 
                 if (huntingStatus) {
                     huntingStatus.innerHTML = '<div class="alert alert-secondary">准备打猎...</div>';
+                }
+            }
+        }
+
+        // 更新山洞打猎显示
+        function updateCaveHuntingDisplay() {
+            const caveHuntCount = document.getElementById('cave-hunt-count');
+            const caveHuntBtn = document.getElementById('cave-hunt-btn');
+            const caveHuntingStatus = document.getElementById('cave-hunting-status');
+
+            const cave = gameData.huntingSystem.cave;
+
+            if (caveHuntCount) caveHuntCount.textContent = cave.huntCount;
+
+            if (cave.isHunting) {
+                const elapsed = Date.now() - cave.huntStartTime;
+                const remaining = Math.max(0, cave.huntDuration - elapsed);
+
+                if (remaining <= 0) {
+                    addDebugLog('⏰ 山洞打猎时间到，触发完成打猎');
+                    completeHunting('cave');
+                    return;
+                }
+
+                const seconds = Math.max(1, Math.ceil(remaining / 1000));
+
+                if (caveHuntBtn) {
+                    caveHuntBtn.disabled = true;
+                    caveHuntBtn.textContent = `🏔️ 探索中... (${seconds}秒)`;
+                }
+
+                if (caveHuntingStatus) {
+                    caveHuntingStatus.innerHTML = `<div class="alert alert-info">正在探索山洞... 剩余${seconds}秒</div>`;
+                }
+            } else {
+                if (caveHuntBtn) {
+                    caveHuntBtn.disabled = false;
+                    caveHuntBtn.textContent = '🏔️ 探索山洞 (20秒)';
+                }
+
+                if (caveHuntingStatus) {
+                    caveHuntingStatus.innerHTML = '<div class="alert alert-secondary">准备探索山洞...</div>';
                 }
             }
         }
@@ -5296,8 +5513,13 @@
             if (stoveUpdated) renderStoves();
 
             // 更新打猎倒计时
-            if (gameData.huntingSystem && gameData.huntingSystem.isHunting) {
-                updateHuntingDisplay();
+            if (gameData.huntingSystem) {
+                if (gameData.huntingSystem.backMountain && gameData.huntingSystem.backMountain.isHunting) {
+                    updateHuntingDisplay();
+                }
+                if (gameData.huntingSystem.cave && gameData.huntingSystem.cave.isHunting) {
+                    updateCaveHuntingDisplay();
+                }
             }
 
             // 更新烤制进度
