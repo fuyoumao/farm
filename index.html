@@ -549,6 +549,14 @@
                 width: 90%;
                 right: 5%;
                 top: 5px;
+                max-height: 80vh;
+                overflow-y: auto;
+            }
+
+            .debug-content {
+                max-height: 70vh;
+                overflow-y: auto;
+                padding: 10px;
             }
 
             .debug-panel.collapsed {
@@ -596,6 +604,46 @@
             .menu-btn {
                 font-size: 11px;
                 padding: 6px 12px;
+            }
+
+            /* 移动端调试按钮优化 */
+            .debug-actions {
+                flex-wrap: wrap !important;
+                max-height: 200px;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            .debug-btn {
+                flex: 0 0 calc(50% - 3px);
+                margin-bottom: 6px;
+                font-size: 10px;
+                padding: 8px 6px;
+                text-align: center;
+            }
+
+            /* 调试面板滚动条样式 */
+            .debug-content::-webkit-scrollbar,
+            .debug-actions::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+
+            .debug-content::-webkit-scrollbar-track,
+            .debug-actions::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 4px;
+            }
+
+            .debug-content::-webkit-scrollbar-thumb,
+            .debug-actions::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 4px;
+            }
+
+            .debug-content::-webkit-scrollbar-thumb:hover,
+            .debug-actions::-webkit-scrollbar-thumb:hover {
+                background: #555;
             }
         }
 
@@ -987,7 +1035,7 @@
     <!-- 调试面板 -->
     <div class="debug-panel collapsed" id="debug-panel">
         <div class="debug-header" onclick="toggleDebugContent()">
-            <span>🔧 调试控制台</span>
+            <span>🔧 调试控制台 <small style="opacity: 0.7;">(可滚动)</small></span>
             <button class="debug-toggle" onclick="event.stopPropagation(); toggleDebugContent()">−</button>
         </div>
         <div class="debug-content" id="debug-content">
