@@ -1341,6 +1341,20 @@
             </div>
         </div>
 
+        <!-- 稻香村入口 -->
+        <div class="section" id="rice-village-section" style="display: none;">
+            <h2 class="section-title">稻香村</h2>
+            <div style="padding: 20px; text-align: center;">
+                <div class="alert alert-info" style="margin-bottom: 15px;">
+                    <strong>🏮 稻香村已解锁！</strong><br>
+                    与猫咪伙伴一起踏上冒险之旅
+                </div>
+                <button class="action-btn primary" onclick="enterRiceVillage()" style="font-size: 16px; padding: 12px 24px;">
+                    前往稻香村
+                </button>
+            </div>
+        </div>
+
         <!-- 茶饮管理区域 -->
         <div class="section">
             <h2 class="section-title">茶饮库存管理</h2>
@@ -3893,11 +3907,41 @@
                     gameData.funds += goldReward;
                     giftDescription = `${goldReward}金币`;
                 } else if (reachedMilestone === 3000) {
-                    gift = '稀有种子';
+                    gift = '稀有种子 + 稻香村解锁';
                     const rareSeeds = ['五味子', '洛神花', '玫瑰花'];
                     const randomSeed = rareSeeds[Math.floor(Math.random() * rareSeeds.length)];
                     gameData.seeds[randomSeed] = (gameData.seeds[randomSeed] || 0) + 3;
                     giftDescription = `3个${randomSeed}种子`;
+
+                    // 解锁稻香村
+                    if (!gameData.riceVillage) {
+                        gameData.riceVillage = {
+                            unlocked: true,
+                            maxIntimacyCats: []
+                        };
+                    }
+
+                    // 添加到满级猫咪列表
+                    if (!gameData.riceVillage.maxIntimacyCats.includes(catName)) {
+                        gameData.riceVillage.maxIntimacyCats.push(catName);
+                        addDebugLog(`🏮 ${catName}达到3000亲密度，解锁稻香村！`);
+
+                        // 显示稻香村解锁提示
+                        setTimeout(() => {
+                            const unlockContent = `
+                                <div style="text-align: center; line-height: 1.6;">
+                                    <h3 style="color: #0040c0; margin: 0 0 15px 0;">🏮 重大发现！</h3>
+                                    <div style="margin-bottom: 15px; padding: 12px; background: #f0f9ff; border: 1px inset #c0c0c0;">
+                                        <div style="font-weight: bold; color: #d2691e; margin-bottom: 8px;">${catName} 亲密度达到3000！</div>
+                                        <div style="color: #1e40af; font-weight: bold; margin-bottom: 8px;">🏮 解锁稻香村！</div>
+                                        <div style="color: #666; font-size: 12px;">与猫咪伙伴一起踏上冒险之旅</div>
+                                    </div>
+                                </div>
+                            `;
+                            showWin95Modal('稻香村解锁', unlockContent, '🏮');
+                            updateRiceVillageDisplay();
+                        }, 2000);
+                    }
                 } else if (reachedMilestone === 5000) {
                     gift = '终极礼物';
                     gameData.funds += 150;
@@ -3922,6 +3966,213 @@
             
             // 保存数据
             saveGameDataToDatabase();
+        }
+
+        // 更新稻香村显示
+        function updateRiceVillageDisplay() {
+            const riceVillageSection = document.getElementById('rice-village-section');
+
+            // 检查是否应该解锁稻香村
+            checkAndUnlockRiceVillage();
+
+            if (gameData.riceVillage && gameData.riceVillage.unlocked) {
+                riceVillageSection.style.display = 'block';
+                addDebugLog('🏮 稻香村入口已显示');
+            } else {
+                riceVillageSection.style.display = 'none';
+            }
+        }
+
+        // 检查并解锁稻香村
+        function checkAndUnlockRiceVillage() {
+            console.log('检查稻香村解锁条件...');
+
+            // 先看看localStorage里都有什么
+            console.log('localStorage所有键:', Object.keys(localStorage));
+
+            // 检查gameData里是否有猫咪
+            if (gameData && gameData.cats) {
+                console.log('gameData.cats:', gameData.cats);
+            }
+
+            // 从gameData.cats中检查猫咪亲密度
+            let maxIntimacyCat = null;
+
+            if (gameData && gameData.cats) {
+                console.log('检查gameData.cats中的猫咪...');
+
+                // gameData.cats是对象，不是数组，需要遍历属性
+                for (const catName in gameData.cats) {
+                    const cat = gameData.cats[catName];
+                    if (cat && typeof cat === 'object' && cat.intimacy) {
+                        console.log(`检查猫咪: ${catName}, 亲密度: ${cat.intimacy}`);
+
+                        if (cat.intimacy >= 3000) {
+                            maxIntimacyCat = { name: catName, intimacy: cat.intimacy, ...cat };
+                            console.log(`发现符合条件的猫咪: ${catName} (${cat.intimacy})`);
+                            break; // 找到一只就够了
+                        }
+                    }
+                }
+            }
+
+            console.log('最终找到的3000+亲密度猫咪:', maxIntimacyCat);
+
+            if (maxIntimacyCat && (!gameData.riceVillage || !gameData.riceVillage.unlocked)) {
+                console.log('满足解锁条件，开始解锁稻香村...');
+                // 解锁稻香村
+                if (!gameData.riceVillage) {
+                    gameData.riceVillage = {
+                        unlocked: true,
+                        maxIntimacyCats: []
+                    };
+                } else {
+                    gameData.riceVillage.unlocked = true;
+                }
+
+                // 添加到满级猫咪列表
+                if (!gameData.riceVillage.maxIntimacyCats.includes(maxIntimacyCat.name)) {
+                    gameData.riceVillage.maxIntimacyCats.push(maxIntimacyCat.name);
+                    addDebugLog(`🏮 检测到${maxIntimacyCat.name}已达到3000亲密度，解锁稻香村！`);
+
+                    // 显示稻香村解锁提示
+                    setTimeout(() => {
+                        const unlockContent = `
+                            <div style="text-align: center; line-height: 1.6;">
+                                <h3 style="color: #0040c0; margin: 0 0 15px 0;">🏮 重大发现！</h3>
+                                <div style="margin-bottom: 15px; padding: 12px; background: #f0f9ff; border: 1px inset #c0c0c0;">
+                                    <div style="font-weight: bold; color: #d2691e; margin-bottom: 8px;">${maxIntimacyCat.name} 亲密度已达到3000！</div>
+                                    <div style="color: #1e40af; font-weight: bold; margin-bottom: 8px;">🏮 解锁稻香村！</div>
+                                    <div style="color: #666; font-size: 12px;">与猫咪伙伴一起踏上冒险之旅</div>
+                                </div>
+                            </div>
+                        `;
+                        showWin95Modal('稻香村解锁', unlockContent, '🏮');
+                    }, 1000);
+                }
+
+                // 保存数据
+                saveGameDataToDatabase();
+            }
+        }
+
+        // 进入稻香村
+        function enterRiceVillage() {
+            if (!gameData.riceVillage || !gameData.riceVillage.unlocked) {
+                showAlert('稻香村尚未解锁！需要任意猫咪达到3000亲密度。', '未解锁', '🏮');
+                return;
+            }
+
+            // 检查是否已经有稻香村数据（说明已经进入过）
+            const riceVillageData = localStorage.getItem('riceVillageData');
+            if (riceVillageData) {
+                try {
+                    const data = JSON.parse(riceVillageData);
+                    if (data.cat && data.cat.name && data.cat.name !== "猫咪伙伴") {
+                        // 已经有猫咪名字，直接进入稻香村
+                        console.log('检测到已有稻香村数据，直接进入');
+                        window.location.href = `rice_village.html?catName=${encodeURIComponent(data.cat.name)}`;
+                        return;
+                    }
+                } catch (e) {
+                    console.log('稻香村数据解析失败，继续正常流程');
+                }
+            }
+
+            const maxIntimacyCats = gameData.riceVillage.maxIntimacyCats || [];
+            if (maxIntimacyCats.length === 0) {
+                showAlert('没有达到最高亲密度的猫咪！', '无法进入', '🏮');
+                return;
+            }
+
+            if (maxIntimacyCats.length === 1) {
+                // 只有一只猫咪，直接进入命名流程
+                const catName = maxIntimacyCats[0];
+                showCatNamingDialog(catName);
+            } else {
+                // 多只猫咪，显示选择界面
+                showCatSelectionDialog(maxIntimacyCats);
+            }
+        }
+
+        // 显示猫咪选择对话框
+        function showCatSelectionDialog(cats) {
+            let catOptions = '';
+            cats.forEach(cat => {
+                catOptions += `<button class="action-btn" onclick="selectCatForRiceVillage('${cat}')" style="margin: 5px; padding: 10px 15px;">${cat}</button>`;
+            });
+
+            const selectionContent = `
+                <div style="text-align: center; line-height: 1.6;">
+                    <h3 style="color: #0040c0; margin: 0 0 15px 0;">🏮 选择猫咪伙伴</h3>
+                    <div style="margin-bottom: 15px; padding: 12px; background: #f0f0f0; border: 1px inset #c0c0c0;">
+                        <div style="color: #666; margin-bottom: 15px;">选择一只猫咪作为你的冒险伙伴：</div>
+                        ${catOptions}
+                    </div>
+                </div>
+            `;
+            showWin95Modal('选择猫咪伙伴', selectionContent, '🏮');
+        }
+
+        // 选择猫咪进入稻香村
+        function selectCatForRiceVillage(catName) {
+            closeWin95Modal();
+            showCatNamingDialog(catName);
+        }
+
+        // 显示猫咪命名对话框
+        function showCatNamingDialog(catName) {
+            const namingContent = `
+                <div style="text-align: center; line-height: 1.6;">
+                    <h3 style="color: #0040c0; margin: 0 0 15px 0;">🏮 为猫咪起名</h3>
+                    <div style="margin-bottom: 15px; padding: 12px; background: #f0f0f0; border: 1px inset #c0c0c0;">
+                        <div style="color: #666; margin-bottom: 15px;">为你的伙伴 ${catName} 起一个冒险名字：</div>
+                        <input type="text" id="cat-adventure-name" placeholder="输入猫咪的冒险名字"
+                               style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px; margin-bottom: 15px;">
+                        <br>
+                        <button class="action-btn primary" onclick="confirmCatName('${catName}')">确认并进入稻香村</button>
+                        <button class="action-btn" onclick="closeWin95Modal()">取消</button>
+                    </div>
+                </div>
+            `;
+            showWin95Modal('猫咪命名', namingContent, '🏮');
+
+            // 聚焦到输入框
+            setTimeout(() => {
+                const nameInput = document.getElementById('cat-adventure-name');
+                if (nameInput) {
+                    nameInput.focus();
+                    nameInput.value = catName; // 默认使用原名
+                }
+            }, 100);
+        }
+
+        // 确认猫咪名字并进入稻香村
+        function confirmCatName(originalCatName) {
+            const nameInput = document.getElementById('cat-adventure-name');
+            const adventureName = nameInput ? nameInput.value.trim() : '';
+
+            if (!adventureName) {
+                showAlert('请输入猫咪的冒险名字！', '名字不能为空', '🏮');
+                return;
+            }
+
+            // 保存猫咪冒险名字
+            if (!gameData.riceVillage.catNames) {
+                gameData.riceVillage.catNames = {};
+            }
+            gameData.riceVillage.catNames[originalCatName] = adventureName;
+
+            addDebugLog(`🏮 ${originalCatName} 的冒险名字设为：${adventureName}`);
+
+            // 保存数据
+            saveGameDataToDatabase();
+
+            // 关闭对话框
+            closeWin95Modal();
+
+            // 进入稻香村
+            window.open(`rice_village.html?catName=${encodeURIComponent(adventureName)}`, '_blank');
         }
 
         // 检查配方解锁
@@ -4205,11 +4456,41 @@
                     gameData.funds += goldReward;
                     giftDescription = `${goldReward}金币`;
                 } else if (reachedMilestone === 3000) {
-                    gift = '稀有种子';
+                    gift = '稀有种子 + 稻香村解锁';
                     const rareSeeds = ['五味子', '洛神花', '玫瑰花'];
                     const randomSeed = rareSeeds[Math.floor(Math.random() * rareSeeds.length)];
                     gameData.seeds[randomSeed] = (gameData.seeds[randomSeed] || 0) + 2;
                     giftDescription = `2个${randomSeed}种子`;
+
+                    // 解锁稻香村
+                    if (!gameData.riceVillage) {
+                        gameData.riceVillage = {
+                            unlocked: true,
+                            maxIntimacyCats: []
+                        };
+                    }
+
+                    // 添加到满级猫咪列表
+                    if (!gameData.riceVillage.maxIntimacyCats.includes(catName)) {
+                        gameData.riceVillage.maxIntimacyCats.push(catName);
+                        addDebugLog(`🏮 ${catName}达到3000亲密度，解锁稻香村！`);
+
+                        // 显示稻香村解锁提示
+                        setTimeout(() => {
+                            const unlockContent = `
+                                <div style="text-align: center; line-height: 1.6;">
+                                    <h3 style="color: #0040c0; margin: 0 0 15px 0;">🏮 重大发现！</h3>
+                                    <div style="margin-bottom: 15px; padding: 12px; background: #f0f9ff; border: 1px inset #c0c0c0;">
+                                        <div style="font-weight: bold; color: #d2691e; margin-bottom: 8px;">${catName} 亲密度达到3000！</div>
+                                        <div style="color: #1e40af; font-weight: bold; margin-bottom: 8px;">🏮 解锁稻香村！</div>
+                                        <div style="color: #666; font-size: 12px;">与猫咪伙伴一起踏上冒险之旅</div>
+                                    </div>
+                                </div>
+                            `;
+                            showWin95Modal('稻香村解锁', unlockContent, '🏮');
+                            updateRiceVillageDisplay();
+                        }, 2000);
+                    }
                 } else if (reachedMilestone === 5000) {
                     gift = '终极礼物';
                     gameData.funds += 100;
@@ -5617,7 +5898,16 @@
             
             // 启动游戏循环
             setInterval(gameLoop, 1000);
-            
+
+            // 检查稻香村解锁状态
+            updateRiceVillageDisplay();
+
+            // 延迟再次检查，确保数据加载完成
+            setTimeout(() => {
+                console.log('延迟检查稻香村解锁状态...');
+                updateRiceVillageDisplay();
+            }, 2000);
+
             addDebugLog('游戏初始化完成');
         }
 

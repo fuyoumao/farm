@@ -1,0 +1,2755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏮 稻香村 - 可爱茶铺</title>
+    <style>
+        /* 完全复制茶铺首页样式 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #ffffff;
+            color: #374151;
+            line-height: 1.4;
+            font-size: 12px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 15px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 16px; color: #374151; margin-bottom: 8px; font-weight: 500; }
+        .header .subtitle { color: #6b7280; margin-top: 5px; font-size: 12px; }
+        .section { margin-bottom: 25px; }
+        .section-title { font-size: 12px; font-weight: 500; margin-bottom: 10px; color: #374151; }
+
+        /* 导航栏 */
+        .nav-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            padding: 8px;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+        }
+
+        .nav-btn {
+            padding: 6px 10px;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            background-color: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        /* 状态栏 */
+        .status-bar {
+            margin-bottom: 15px;
+        }
+
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #e5e7eb;
+            background-color: #ffffff;
+        }
+
+        .status-table th,
+        .status-table td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #e5e7eb;
+            font-size: 12px;
+            color: #374151;
+        }
+
+        .status-table th {
+            background-color: #f9fafb;
+            font-weight: 500;
+        }
+
+        /* 主要表格样式 */
+        .main-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 15px;
+            background-color: #ffffff;
+        }
+
+        .main-table th,
+        .main-table td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #e5e7eb;
+            font-size: 12px;
+            color: #374151;
+        }
+
+        .main-table th {
+            background-color: #f9fafb;
+            font-weight: 500;
+        }
+
+        /* 按钮样式 - 完全复制茶铺首页 */
+        .action-btn {
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            color: #374151;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 2px;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background-color: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        .action-btn:disabled {
+            background: #f3f4f6;
+            border-color: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .action-btn.primary {
+            background-color: #f3f4f6;
+            color: #374151;
+            border-color: #d1d5db;
+        }
+
+        .action-btn.primary:hover {
+            background-color: #e5e7eb;
+        }
+
+        /* 进度条样式 - 圆角灰色进度条 */
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .progress-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background-color: #9ca3af;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            position: relative;
+            z-index: 1;
+            font-size: 12px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        /* 文字进度条（用于战斗/采集状态） */
+        .text-progress {
+            font-family: monospace;
+            font-size: 12px;
+            color: #374151;
+        }
+
+        /* 经验值进度条 */
+        .exp-bar {
+            width: 100%;
+            height: 16px;
+            background-color: #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 5px;
+        }
+        .exp-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background-color: #6b7280;
+            border-radius: 8px;
+            transition: width 0.3s ease;
+        }
+        .exp-text {
+            position: relative;
+            z-index: 1;
+            font-size: 10px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        /* 模态框样式 - 完全复制茶铺首页 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #ffffff;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            width: 80%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+
+        .modal-header {
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #374151;
+        }
+
+        .close {
+            color: #9ca3af;
+            float: right;
+            font-size: 18px;
+            font-weight: normal;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #374151;
+        }
+
+        /* 状态指示器 - 去掉颜色，使用灰色系 */
+        .status-indicator {
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .status-available {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .status-busy {
+            background-color: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .status-cooldown {
+            background-color: #e5e7eb;
+            color: #6b7280;
+        }
+
+        /* 悬浮任务日志球 */
+        .floating-quest-ball {
+            position: fixed;
+            right: 20px;
+            top: 40%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: #f3f4f6;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 500;
+            color: #374151;
+            z-index: 999;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .floating-quest-ball:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .floating-quest-panel {
+            position: fixed;
+            right: 80px;
+            top: 40%;
+            transform: translateY(-50%);
+            width: 300px;
+            max-height: 400px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 15px;
+            z-index: 998;
+            display: none;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        /* 悬浮背包球 */
+        .floating-bag-ball {
+            position: fixed;
+            right: 20px;
+            top: 60%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: #f3f4f6;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 500;
+            color: #374151;
+            z-index: 999;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .floating-bag-ball:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .floating-bag-panel {
+            position: fixed;
+            right: 80px;
+            top: 60%;
+            transform: translateY(-50%);
+            width: 300px;
+            max-height: 400px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 15px;
+            z-index: 998;
+            display: none;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .floating-quest-panel.show {
+            display: block !important;
+        }
+
+        .floating-quest-panel.show {
+            display: block;
+        }
+
+        .quest-panel-header {
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #374151;
+        }
+
+        .quest-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .quest-title {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .quest-progress {
+            color: #6b7280;
+            font-size: 11px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .nav-bar {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+
+            .nav-btn {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+
+            .main-table th,
+            .main-table td {
+                padding: 6px 8px;
+                font-size: 12px;
+            }
+
+            .action-btn {
+                font-size: 11px;
+                padding: 4px 8px;
+            }
+
+            .floating-quest-ball {
+                width: 40px;
+                height: 40px;
+                right: 15px;
+                font-size: 11px;
+            }
+
+            .floating-quest-panel {
+                right: 65px;
+                width: 250px;
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 页面标题 -->
+        <div class="header">
+            <h1>稻香村</h1>
+            <div class="subtitle">与猫咪伙伴的冒险之旅</div>
+        </div>
+
+        <!-- 基础运营数据 -->
+        <div class="section">
+            <h2 class="section-title">基础运营数据</h2>
+            <table class="main-table">
+                <tr>
+                    <td>运营天数</td>
+                    <td id="operation-days">第1天</td>
+                    <td>当前季节</td>
+                    <td id="current-season">春天 (第1天)</td>
+                    <td>天气状况</td>
+                    <td id="weather-status">晴天</td>
+                </tr>
+                <tr>
+                    <td colspan="2" id="weather-effect">作物生长 正常</td>
+                    <td>运营资金</td>
+                    <td colspan="3" id="operation-funds">0 金币</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 导航栏 -->
+        <div class="nav-bar">
+            <button class="nav-btn" onclick="returnToTeaShop()">返回茶铺</button>
+            <button class="nav-btn" onclick="openBag()">背包</button>
+            <button class="nav-btn" onclick="openQuestLog()">任务日志</button>
+            <button class="nav-btn" onclick="meditate()">打坐恢复</button>
+            <button class="nav-btn" onclick="manualCloudSync()" style="background: #e0f2fe;">云端同步</button>
+            <button class="nav-btn" onclick="forceRefreshData()" style="background: #fef3c7;">刷新数据</button>
+            <button class="nav-btn" onclick="testBag()" style="background: #dcfce7;">测试背包</button>
+            <button class="nav-btn" onclick="forceUpdateFunds()" style="background: #fef08a;">强制刷新金币</button>
+            <button class="nav-btn" onclick="clearRiceVillageProgress()" style="background: #fca5a5;">清除稻香村进度</button>
+        </div>
+
+        <!-- 角色状态 -->
+        <div class="status-bar">
+            <table class="status-table">
+                <thead>
+                    <tr>
+                        <th>角色</th>
+                        <th>等级</th>
+                        <th>血量</th>
+                        <th>力量</th>
+                        <th>体力</th>
+                        <th>装备</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>玩家</td>
+                        <td id="player-level">1级</td>
+                        <td id="player-hp">100/100</td>
+                        <td id="player-power">5</td>
+                        <td id="player-stamina">100/100</td>
+                        <td id="player-equipment">无装备</td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" id="player-exp-bar">
+                            <div class="exp-bar">
+                                <div class="exp-fill" id="exp-fill" style="width: 0%"></div>
+                                <div class="exp-text" id="exp-text">0/100 经验</div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td id="cat-name">猫咪伙伴</td>
+                        <td id="cat-level">1级</td>
+                        <td id="cat-hp">100/100</td>
+                        <td id="cat-power">10</td>
+                        <td id="cat-type">-</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- NPC列表 -->
+        <div class="section">
+            <h3 class="section-title">村民</h3>
+            <table class="main-table">
+                <thead>
+                    <tr>
+                        <th>姓名</th>
+                        <th>职业</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="npc-list">
+                    <tr>
+                        <td>村长刘洋</td>
+                        <td>村长</td>
+                        <td><span class="status-indicator status-available">可对话</span></td>
+                        <td><button class="action-btn" onclick="talkToNPC('村长刘洋')">聊天</button></td>
+                    </tr>
+                    <tr>
+                        <td>王婆婆</td>
+                        <td>村民</td>
+                        <td><span class="status-indicator status-available">可对话</span></td>
+                        <td><button class="action-btn" onclick="talkToNPC('王婆婆')">聊天</button></td>
+                    </tr>
+                    <tr>
+                        <td>李复</td>
+                        <td>神秘人</td>
+                        <td><span class="status-indicator status-available">可对话</span></td>
+                        <td><button class="action-btn" onclick="talkToNPC('李复')">聊天</button></td>
+                    </tr>
+                    <tr>
+                        <td>民兵队长王大石</td>
+                        <td>民兵队长</td>
+                        <td><span class="status-indicator status-available">可对话</span></td>
+                        <td><button class="action-btn" onclick="talkToNPC('王大石')">聊天</button></td>
+                    </tr>
+                    <tr>
+                        <td>余半仙</td>
+                        <td>算命先生</td>
+                        <td><span class="status-indicator status-available">可算命</span></td>
+                        <td><button class="action-btn" onclick="talkToNPC('余半仙')">聊天</button></td>
+                    </tr>
+                    <tr>
+                        <td>武器铺老板</td>
+                        <td>商人</td>
+                        <td><span class="status-indicator status-available">营业中</span></td>
+                        <td>
+                            <button class="action-btn" onclick="talkToNPC('武器铺老板')">聊天</button>
+                            <button class="action-btn success" onclick="openWeaponShop()">购买</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 植物资源 -->
+        <div class="section">
+            <h3 class="section-title">植物资源</h3>
+            <table class="main-table">
+                <thead>
+                    <tr>
+                        <th>名称</th>
+                        <th>描述</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="plant-list">
+                    <tr>
+                        <td>止血草</td>
+                        <td>常见的药草</td>
+                        <td><span class="status-indicator status-available">可采集</span></td>
+                        <td><button class="action-btn" onclick="gatherPlant('止血草')">采集</button></td>
+                    </tr>
+                    <tr>
+                        <td>野菜</td>
+                        <td>普通的野菜</td>
+                        <td><span class="status-indicator status-available">可采集</span></td>
+                        <td><button class="action-btn" onclick="gatherPlant('野菜')">采集</button></td>
+                    </tr>
+                    <tr>
+                        <td>灵芝</td>
+                        <td>珍贵的药材</td>
+                        <td><span class="status-indicator status-available">可采集</span></td>
+                        <td><button class="action-btn" onclick="gatherPlant('灵芝')">采集</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 怪物 -->
+        <div class="section">
+            <h3 class="section-title">野生动物</h3>
+            <table class="main-table">
+                <thead>
+                    <tr>
+                        <th>名称</th>
+                        <th>血量</th>
+                        <th>当前血量</th>
+                        <th>攻击力</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="monster-list">
+                    <tr>
+                        <td>果子狸</td>
+                        <td>10</td>
+                        <td id="monster-hp-果子狸">
+                            <div class="progress-bar" style="height: 16px;">
+                                <div class="progress-fill" style="width: 100%"></div>
+                                <div class="progress-text">10/10</div>
+                            </div>
+                        </td>
+                        <td>1</td>
+                        <td id="monster-status-果子狸"><span class="status-indicator status-available">可攻击</span></td>
+                        <td id="monster-action-果子狸"><button class="action-btn" onclick="attackMonster('果子狸')">攻击</button></td>
+                    </tr>
+                    <tr>
+                        <td>猴子</td>
+                        <td>15</td>
+                        <td id="monster-hp-猴子">
+                            <div class="progress-bar" style="height: 16px;">
+                                <div class="progress-fill" style="width: 100%"></div>
+                                <div class="progress-text">15/15</div>
+                            </div>
+                        </td>
+                        <td>2</td>
+                        <td id="monster-status-猴子"><span class="status-indicator status-available">可攻击</span></td>
+                        <td id="monster-action-猴子"><button class="action-btn" onclick="attackMonster('猴子')">攻击</button></td>
+                    </tr>
+                    <tr>
+                        <td>山贼</td>
+                        <td>25</td>
+                        <td id="monster-hp-山贼">
+                            <div class="progress-bar" style="height: 16px;">
+                                <div class="progress-fill" style="width: 100%"></div>
+                                <div class="progress-text">25/25</div>
+                            </div>
+                        </td>
+                        <td>5</td>
+                        <td id="monster-status-山贼"><span class="status-indicator status-available">可攻击</span></td>
+                        <td id="monster-action-山贼"><button class="action-btn" onclick="attackMonster('山贼')">攻击</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 背包模态框 -->
+    <div id="bag-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                背包
+                <span class="close" onclick="closeBag()">&times;</span>
+            </div>
+            <table class="main-table">
+                <thead>
+                    <tr>
+                        <th>物品名称</th>
+                        <th>数量</th>
+                        <th>描述</th>
+                    </tr>
+                </thead>
+                <tbody id="bag-items">
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: #666;">背包为空</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 任务日志模态框 -->
+    <div id="quest-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                任务日志
+                <span class="close" onclick="closeQuestLog()">&times;</span>
+            </div>
+            <div id="quest-content">
+                <p style="text-align: center; color: #666;">暂无任务</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 武器铺模态框 -->
+    <div id="weapon-shop-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                武器铺
+                <span class="close" onclick="closeWeaponShop()">&times;</span>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 10px 0;">武器</h4>
+                <table class="main-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>攻击力</th>
+                            <th>耐久度</th>
+                            <th>价格</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>短剑</td>
+                            <td>+1</td>
+                            <td>20回合</td>
+                            <td>10金币</td>
+                            <td><button class="action-btn" onclick="buyWeapon('短剑', 1, 10)">购买</button></td>
+                        </tr>
+                        <tr>
+                            <td>长剑</td>
+                            <td>+2</td>
+                            <td>20回合</td>
+                            <td>20金币</td>
+                            <td><button class="action-btn" onclick="buyWeapon('长剑', 2, 20)">购买</button></td>
+                        </tr>
+                        <tr>
+                            <td>链</td>
+                            <td>+3</td>
+                            <td>20回合</td>
+                            <td>30金币</td>
+                            <td><button class="action-btn" onclick="buyWeapon('链', 3, 30)">购买</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 10px 0;">防具</h4>
+                <table class="main-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>血量</th>
+                            <th>价格</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>布甲</td>
+                            <td>+1</td>
+                            <td>1金币</td>
+                            <td><button class="action-btn" onclick="buyArmor('布甲', 1, 1)">购买</button></td>
+                        </tr>
+                        <tr>
+                            <td>皮甲</td>
+                            <td>+20</td>
+                            <td>20金币</td>
+                            <td><button class="action-btn" onclick="buyArmor('皮甲', 20, 20)">购买</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="repair-section" style="margin-bottom: 20px; display: none;">
+                <h4 style="margin: 0 0 10px 0;">修理服务</h4>
+                <table class="main-table">
+                    <tbody id="repair-list">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 悬浮任务日志球 -->
+    <div class="floating-quest-ball" onclick="toggleFloatingQuest()" id="floating-quest-ball">
+        任务
+    </div>
+
+    <!-- 悬浮任务面板 -->
+    <div class="floating-quest-panel" id="floating-quest-panel">
+        <div class="quest-panel-header">
+            当前任务
+            <span style="float: right; cursor: pointer; color: #9ca3af;" onclick="toggleFloatingQuest()">&times;</span>
+        </div>
+        <div id="floating-quest-content">
+            <div style="text-align: center; color: #6b7280; font-size: 11px;">暂无任务</div>
+        </div>
+    </div>
+
+    <!-- 悬浮背包球 -->
+    <div class="floating-bag-ball" onclick="console.log('背包球被点击'); toggleFloatingBag();" id="floating-bag-ball">
+        背包
+    </div>
+
+    <!-- 悬浮背包面板 -->
+    <div class="floating-bag-panel" id="floating-bag-panel" style="display: none;">
+        <div class="quest-panel-header">
+            背包物品
+            <span style="float: right; cursor: pointer; color: #9ca3af;" onclick="console.log('关闭按钮被点击'); toggleFloatingBag();">&times;</span>
+        </div>
+        <div id="floating-bag-content">
+            <div style="text-align: center; color: #6b7280; font-size: 11px;">背包为空</div>
+        </div>
+    </div>
+
+    <script>
+        // 稻香村游戏数据
+        let riceVillageData = {
+            player: {
+                name: "玩家",
+                hp: 100,
+                maxHp: 100,
+                stamina: 100,
+                maxStamina: 100,
+                power: 5,
+                level: 1,
+                exp: 0,
+                weapon: null,
+                armor: null
+            },
+            cat: {
+                name: "猫咪伙伴",
+                hp: 100,
+                maxHp: 100,
+                power: 10,
+                level: 1,
+                type: null // 'tank' 或 'damage'
+            },
+            inventory: {},
+            npcs: {
+                "村长刘洋": { questStage: 0, lastTalkTime: 0 },
+                "王婆婆": { questStage: 0, lastTalkTime: 0 },
+                "李复": { questStage: 0, lastTalkTime: 0 },
+                "王大石": { questStage: 0, lastTalkTime: 0 },
+                "余半仙": { questStage: 0, lastTalkTime: 0 },
+                "武器铺老板": { questStage: 0, lastTalkTime: 0 }
+            },
+            currentQuest: null,
+            questProgress: 0,
+            questTarget: 0,
+            plants: {
+                "止血草": { available: true, lastGathered: 0 },
+                "野菜": { available: true, lastGathered: 0 },
+                "灵芝": { available: true, lastGathered: 0 }
+            },
+            monsters: {
+                "果子狸": { hp: 10, maxHp: 10, attack: 1, available: true, lastKilled: 0 },
+                "猴子": { hp: 15, maxHp: 15, attack: 2, available: true, lastKilled: 0 },
+                "山贼": { hp: 25, maxHp: 25, attack: 5, available: true, lastKilled: 0 }
+            }
+        };
+
+        // Win95样式弹窗
+        function showWin95Modal(title, content, icon = '') {
+            // 先关闭所有现有的模态框
+            closeWin95Modal();
+
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            modal.style.zIndex = '9999'; // 确保在最顶层
+            modal.innerHTML = `
+                <div class="modal-content" style="background: #c0c0c0; border: 2px outset #c0c0c0; border-radius: 0; max-width: 400px;">
+                    <div style="background: linear-gradient(90deg, #0040c0, #4080ff); color: white; padding: 4px 8px; margin: -20px -20px 15px -20px; font-size: 12px; font-weight: bold;">
+                        ${icon} ${title}
+                        <span class="close" onclick="closeWin95Modal()" style="float: right; color: white; font-size: 16px;">&times;</span>
+                    </div>
+                    <div style="padding: 10px; background: #c0c0c0; color: #000; font-size: 12px;">
+                        ${content}
+                    </div>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <button onclick="closeWin95Modal()" style="padding: 4px 20px; background: #c0c0c0; border: 1px outset #c0c0c0; font-size: 12px;">确定</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function closeWin95Modal() {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (modal.parentNode) {
+                    modal.parentNode.removeChild(modal);
+                }
+            });
+
+            // 检查是否有待显示的窗口
+            processModalQueue();
+        }
+
+        // 窗口队列管理
+        let modalQueue = [];
+
+        function queueModal(title, content, icon = '') {
+            modalQueue.push({ title, content, icon });
+            if (modalQueue.length === 1) {
+                processModalQueue();
+            }
+        }
+
+        function processModalQueue() {
+            if (modalQueue.length > 0) {
+                const { title, content, icon } = modalQueue.shift();
+                setTimeout(() => {
+                    showWin95Modal(title, content, icon);
+                }, 500); // 延迟500ms显示下一个窗口
+            }
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            // 从URL参数获取猫咪名字
+            const urlParams = new URLSearchParams(window.location.search);
+            const catName = urlParams.get('catName');
+            if (catName) {
+                riceVillageData.cat.name = catName;
+                document.getElementById('cat-name').textContent = catName;
+            }
+
+            // 加载稻香村存档数据
+            loadRiceVillageData();
+
+            // 尝试从云端加载最新数据
+            setTimeout(() => {
+                loadFromGitHubGist();
+            }, 1000);
+
+            // 从茶铺获取基础数据
+            loadTeaShopData();
+            updateDisplay();
+            updateFloatingQuestDisplay(); // 初始化悬浮任务显示
+            updateFloatingBagDisplay(); // 初始化悬浮背包显示
+
+            // 强制更新金币显示（延迟执行，避免弹窗）
+            setTimeout(() => {
+                console.log('页面加载后自动更新金币...');
+
+                // 静默更新，不显示弹窗
+                const possibleKeys = ['teaGameData', 'cuteTeaShop_save', 'teaGameSave_1', 'gameData'];
+
+                for (const key of possibleKeys) {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed && parsed.funds !== undefined) {
+                                const funds = parsed.funds || 0;
+                                console.log(`自动从${key}获取金币:`, funds);
+
+                                // 更新顶部显示
+                                const operationFunds = document.getElementById('operation-funds');
+                                if (operationFunds) {
+                                    operationFunds.textContent = `${funds} 金币`;
+                                }
+
+                                // 更新背包显示
+                                updateFloatingBagDisplay();
+                                break;
+                            }
+                        } catch (e) {
+                            console.log(`自动更新: ${key}数据解析失败`);
+                        }
+                    }
+                }
+            }, 1000);
+
+            // 初始化所有怪物血量显示
+            Object.keys(riceVillageData.monsters).forEach(monsterName => {
+                updateMonsterHP(monsterName);
+            });
+
+            startStaminaRegeneration();
+
+            // 延迟再次加载数据确保显示正确
+            setTimeout(() => {
+                loadTeaShopData();
+                updateFloatingBagDisplay();
+                console.log('延迟加载完成');
+            }, 500);
+
+            // 再次延迟加载确保数据正确
+            setTimeout(() => {
+                loadTeaShopData();
+                updateFloatingBagDisplay();
+                console.log('二次延迟加载完成');
+            }, 2000);
+
+            // 定期保存数据和刷新金币
+            setInterval(() => {
+                saveRiceVillageData();
+                // 定期刷新金币数据
+                loadTeaShopData();
+            }, 30000); // 每30秒保存和刷新一次
+        };
+
+        // 保存稻香村数据
+        function saveRiceVillageData() {
+            try {
+                localStorage.setItem('riceVillageData', JSON.stringify(riceVillageData));
+                console.log('稻香村数据已保存到本地');
+
+                // 如果有GitHub Token，也保存到云端
+                const cloudSaveConfig = JSON.parse(localStorage.getItem('cloudSaveConfig') || '{}');
+                if (cloudSaveConfig.githubToken && cloudSaveConfig.gistId) {
+                    saveToGitHubGist();
+                }
+            } catch (error) {
+                console.error('保存稻香村数据失败:', error);
+            }
+        }
+
+        // 加载稻香村数据
+        function loadRiceVillageData() {
+            try {
+                const savedData = localStorage.getItem('riceVillageData');
+                console.log('本地稻香村数据:', savedData); // 调试日志
+
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    console.log('解析后的稻香村数据:', data); // 调试日志
+
+                    // 深度合并保存的数据，保留当前的默认值结构
+                    riceVillageData.player = { ...riceVillageData.player, ...data.player };
+                    riceVillageData.cat = { ...riceVillageData.cat, ...data.cat };
+                    riceVillageData.npcs = { ...riceVillageData.npcs, ...data.npcs };
+                    riceVillageData.plants = { ...riceVillageData.plants, ...data.plants };
+                    riceVillageData.monsters = { ...riceVillageData.monsters, ...data.monsters };
+                    riceVillageData.inventory = { ...riceVillageData.inventory, ...data.inventory };
+
+                    if (data.currentQuest) riceVillageData.currentQuest = data.currentQuest;
+                    if (data.questProgress !== undefined) riceVillageData.questProgress = data.questProgress;
+                    if (data.questTarget !== undefined) riceVillageData.questTarget = data.questTarget;
+                    if (data.questCompleted) riceVillageData.questCompleted = data.questCompleted;
+
+                    console.log('稻香村数据已从本地加载，当前等级:', riceVillageData.player.level);
+                } else {
+                    console.log('没有找到本地稻香村数据，使用默认数据');
+                }
+            } catch (error) {
+                console.error('加载稻香村数据失败:', error);
+            }
+        }
+
+        // 保存到GitHub Gist
+        function saveToGitHubGist() {
+            try {
+                const cloudSaveConfig = JSON.parse(localStorage.getItem('cloudSaveConfig') || '{}');
+                console.log('云端保存配置:', cloudSaveConfig); // 调试日志
+
+                if (!cloudSaveConfig.githubToken || !cloudSaveConfig.gistId) {
+                    console.log('没有GitHub Token或Gist ID，跳过云端保存');
+                    return;
+                }
+
+                const saveData = {
+                    riceVillageData: riceVillageData,
+                    timestamp: new Date().toISOString(),
+                    version: '1.0'
+                };
+
+                const gistData = {
+                    description: "稻香村RPG存档数据",
+                    files: {
+                        "rice_village_save.json": {
+                            content: JSON.stringify(saveData, null, 2)
+                        }
+                    }
+                };
+
+                console.log('正在保存到GitHub Gist...'); // 调试日志
+
+                fetch(`https://api.github.com/gists/${cloudSaveConfig.gistId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${cloudSaveConfig.githubToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(gistData)
+                }).then(response => {
+                    if (response.ok) {
+                        console.log('稻香村数据已保存到GitHub Gist');
+                        return response.json();
+                    } else {
+                        console.error('保存到GitHub Gist失败，状态码:', response.status);
+                        return response.text().then(text => {
+                            console.error('错误详情:', text);
+                        });
+                    }
+                }).catch(error => {
+                    console.error('GitHub Gist保存错误:', error);
+                });
+            } catch (error) {
+                console.error('GitHub Gist保存异常:', error);
+            }
+        }
+
+        // 从GitHub Gist加载数据
+        function loadFromGitHubGist() {
+            try {
+                const cloudSaveConfig = JSON.parse(localStorage.getItem('cloudSaveConfig') || '{}');
+                if (!cloudSaveConfig.githubToken || !cloudSaveConfig.gistId) {
+                    console.log('没有GitHub Token或Gist ID，跳过云端加载');
+                    return;
+                }
+
+                console.log('正在从GitHub Gist加载数据...');
+
+                fetch(`https://api.github.com/gists/${cloudSaveConfig.gistId}`, {
+                    headers: {
+                        'Authorization': `token ${cloudSaveConfig.githubToken}`,
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        console.error('从GitHub Gist加载失败，状态码:', response.status);
+                        return null;
+                    }
+                }).then(gist => {
+                    if (gist && gist.files && gist.files['rice_village_save.json']) {
+                        const content = gist.files['rice_village_save.json'].content;
+                        const saveData = JSON.parse(content);
+
+                        if (saveData.riceVillageData) {
+                            // 合并云端数据
+                            const cloudData = saveData.riceVillageData;
+                            riceVillageData.player = { ...riceVillageData.player, ...cloudData.player };
+                            riceVillageData.cat = { ...riceVillageData.cat, ...cloudData.cat };
+                            riceVillageData.npcs = { ...riceVillageData.npcs, ...cloudData.npcs };
+                            riceVillageData.plants = { ...riceVillageData.plants, ...cloudData.plants };
+                            riceVillageData.monsters = { ...riceVillageData.monsters, ...cloudData.monsters };
+                            riceVillageData.inventory = { ...riceVillageData.inventory, ...cloudData.inventory };
+
+                            if (cloudData.currentQuest) riceVillageData.currentQuest = cloudData.currentQuest;
+                            if (cloudData.questProgress !== undefined) riceVillageData.questProgress = cloudData.questProgress;
+                            if (cloudData.questTarget !== undefined) riceVillageData.questTarget = cloudData.questTarget;
+                            if (cloudData.questCompleted) riceVillageData.questCompleted = cloudData.questCompleted;
+
+                            console.log('从GitHub Gist加载数据成功，等级:', riceVillageData.player.level);
+                            updateDisplay();
+                            updateFloatingQuestDisplay();
+                        }
+                    }
+                }).catch(error => {
+                    console.error('GitHub Gist加载错误:', error);
+                });
+            } catch (error) {
+                console.error('GitHub Gist加载异常:', error);
+            }
+        }
+
+        // 从茶铺获取基础数据
+        function loadTeaShopData() {
+            try {
+                console.log('开始加载茶铺数据...');
+                console.log('localStorage所有键:', Object.keys(localStorage));
+
+                // 尝试多种可能的localStorage键名
+                const possibleKeys = ['teaGameData', 'gameData', 'cuteTeaShop_save', 'teaGameSave_1', 'teaShopData'];
+                let teaShopData = null;
+                let usedKey = null;
+
+                for (const key of possibleKeys) {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        try {
+                            const parsed = JSON.parse(data);
+                            console.log(`检查${key}:`, parsed); // 调试：看看每个键的数据结构
+
+                            if (parsed && (parsed.funds !== undefined || parsed.day !== undefined)) {
+                                teaShopData = data;
+                                usedKey = key;
+                                console.log(`从${key}找到茶铺数据，金币:${parsed.funds}, 天数:${parsed.day}`);
+                                break;
+                            }
+                        } catch (e) {
+                            console.log(`${key}数据解析失败:`, e);
+                        }
+                    } else {
+                        console.log(`${key}: 无数据`);
+                    }
+                }
+
+                console.log('茶铺数据查找结果:', teaShopData ? `已找到(${usedKey})` : '未找到');
+
+                if (teaShopData) {
+                    const data = JSON.parse(teaShopData);
+                    console.log('解析后的茶铺数据 - 天数:', data.day, '金币:', data.funds, '天气:', data.weather); // 调试日志
+
+                    // 更新运营数据显示
+                    const operationDays = document.getElementById('operation-days');
+                    const currentSeason = document.getElementById('current-season');
+                    const weatherStatus = document.getElementById('weather-status');
+                    const weatherEffect = document.getElementById('weather-effect');
+                    const operationFunds = document.getElementById('operation-funds');
+
+                    if (operationDays) {
+                        const dayNum = data.day || data.currentDay || 1;
+                        operationDays.textContent = `第${dayNum}天`;
+                        console.log('更新运营天数:', operationDays.textContent);
+                    }
+
+                    // 季节显示
+                    const seasons = ['春天', '夏天', '秋天', '冬天'];
+                    const seasonName = seasons[data.season] || '春天';
+                    if (currentSeason) {
+                        currentSeason.textContent = `${seasonName} (第${data.seasonDay || 1}天)`;
+                        console.log('更新季节:', currentSeason.textContent);
+                    }
+
+                    // 天气显示
+                    const weatherIcons = {
+                        '晴天': '☀️',
+                        '多云': '☁️',
+                        '雨天': '🌧️',
+                        '暴风雨': '⛈️',
+                        '雪天': '❄️'
+                    };
+
+                    // 处理天气数据（可能是数字或字符串）
+                    let weatherName = '晴天';
+                    if (data.currentWeather) {
+                        weatherName = data.currentWeather;
+                    } else if (typeof data.weather === 'number') {
+                        const weatherNames = ['晴天', '多云', '雨天', '暴风雨', '雪天'];
+                        weatherName = weatherNames[data.weather] || '晴天';
+                    } else if (data.weather) {
+                        weatherName = data.weather;
+                    }
+
+                    const weatherIcon = weatherIcons[weatherName] || '☀️';
+                    if (weatherStatus) {
+                        weatherStatus.textContent = `${weatherIcon} ${weatherName}`;
+                        console.log('更新天气:', weatherStatus.textContent);
+                    }
+
+                    // 天气效果
+                    let weatherEffectText = '作物生长 正常';
+                    if (data.weather === '雨天') {
+                        weatherEffectText = '作物生长 +10%';
+                    } else if (data.weather === '暴风雨') {
+                        weatherEffectText = '作物生长 -10%';
+                    } else if (data.weather === '雪天') {
+                        weatherEffectText = '作物生长 -20%';
+                    }
+                    if (weatherEffect) {
+                        weatherEffect.textContent = weatherEffectText;
+                        console.log('更新天气效果:', weatherEffect.textContent);
+                    }
+
+                    if (operationFunds) {
+                        const funds = data.funds || 0;
+                        operationFunds.textContent = `${funds} 金币`;
+                        console.log('更新金币显示:', operationFunds.textContent);
+
+                        // 同时更新背包中的金币显示
+                        updateFloatingBagDisplay();
+                    }
+
+                    console.log('茶铺数据加载完成'); // 调试日志
+                } else {
+                    console.log('没有找到茶铺数据，使用默认值'); // 调试日志
+                    // 设置默认值
+                    const operationDays = document.getElementById('operation-days');
+                    const currentSeason = document.getElementById('current-season');
+                    const weatherStatus = document.getElementById('weather-status');
+                    const weatherEffect = document.getElementById('weather-effect');
+                    const operationFunds = document.getElementById('operation-funds');
+
+                    if (operationDays) operationDays.textContent = '第1天';
+                    if (currentSeason) currentSeason.textContent = '春天 (第1天)';
+                    if (weatherStatus) weatherStatus.textContent = '☀️ 晴天';
+                    if (weatherEffect) weatherEffect.textContent = '作物生长 正常';
+                    if (operationFunds) operationFunds.textContent = '0 金币';
+                }
+            } catch (error) {
+                console.error('加载茶铺数据失败:', error);
+            }
+        }
+
+        // 返回茶铺
+        function returnToTeaShop() {
+            if (confirm('确定要返回茶铺吗？当前进度会保存。')) {
+                // 保存稻香村数据
+                saveRiceVillageData();
+                window.location.href = 'index.html';
+            }
+        }
+
+        // 计算升级所需经验
+        function getExpRequiredForLevel(level) {
+            return 50 + (level - 1) * 50; // 1级→2级需要100经验，每级增加50
+        }
+
+        // 获得经验值
+        function gainExp(amount) {
+            riceVillageData.player.exp += amount;
+
+            // 检查升级
+            let leveledUp = false;
+            while (true) {
+                const requiredExp = getExpRequiredForLevel(riceVillageData.player.level);
+                if (riceVillageData.player.exp >= requiredExp) {
+                    riceVillageData.player.exp -= requiredExp;
+                    riceVillageData.player.level++;
+                    leveledUp = true;
+
+                    // 升级奖励：每级增加5血量上限，1点力量（每5级）
+                    riceVillageData.player.maxHp += 5;
+                    riceVillageData.player.hp = riceVillageData.player.maxHp; // 升级回满血
+
+                    if (riceVillageData.player.level % 5 === 0) {
+                        riceVillageData.player.power++;
+                    }
+
+                    // 检查等级上限
+                    if (riceVillageData.player.level >= 130) {
+                        riceVillageData.player.level = 130;
+                        riceVillageData.player.exp = 0;
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            if (leveledUp) {
+                console.log(`🎉 恭喜升级！当前等级：${riceVillageData.player.level}级，血量上限增加！${riceVillageData.player.level % 5 === 0 ? '力量增加！' : ''}`);
+
+                // 延迟升级猫咪，避免与其他窗口冲突
+                setTimeout(() => {
+                    upgradeCat();
+                }, 1000);
+            }
+
+            updateDisplay();
+        }
+
+        // 猫咪升级系统
+        function upgradeCat() {
+            // 如果猫咪还没有选择升级方向，加入窗口队列
+            if (!riceVillageData.cat.type) {
+                const choiceContent = `
+                    <div style="text-align: center; line-height: 1.6;">
+                        <h3 style="color: #0040c0; margin: 0 0 15px 0;">🐱 猫咪升级</h3>
+                        <div style="margin-bottom: 15px; padding: 12px; background: #f0f0f0; border: 1px inset #c0c0c0;">
+                            <div style="color: #666; margin-bottom: 15px;">选择${riceVillageData.cat.name}的升级方向：</div>
+                            <button class="action-btn" onclick="chooseCatType('tank')" style="margin: 5px; padding: 10px 15px;">
+                                🛡️ 坦克型<br><small>每级 血量+20, 攻击+1</small>
+                            </button>
+                            <button class="action-btn" onclick="chooseCatType('damage')" style="margin: 5px; padding: 10px 15px;">
+                                ⚔️ 输出型<br><small>每级 血量+5, 攻击+10</small>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                queueModal('猫咪升级选择', choiceContent, '🐱');
+                return;
+            }
+
+            // 根据类型升级
+            riceVillageData.cat.level = riceVillageData.player.level;
+
+            if (riceVillageData.cat.type === 'tank') {
+                // 坦克型：血量+20，攻击+1
+                riceVillageData.cat.maxHp += 20;
+                riceVillageData.cat.hp = riceVillageData.cat.maxHp; // 升级回满血
+                riceVillageData.cat.power += 1;
+                console.log(`🐱 ${riceVillageData.cat.name}升级！坦克型 血量+20, 攻击+1`);
+            } else if (riceVillageData.cat.type === 'damage') {
+                // 输出型：血量+5，攻击+10
+                riceVillageData.cat.maxHp += 5;
+                riceVillageData.cat.hp = riceVillageData.cat.maxHp; // 升级回满血
+                riceVillageData.cat.power += 10;
+                console.log(`🐱 ${riceVillageData.cat.name}升级！输出型 血量+5, 攻击+10`);
+            }
+        }
+
+        // 选择猫咪升级类型
+        function chooseCatType(type) {
+            riceVillageData.cat.type = type;
+            closeWin95Modal();
+
+            // 立即升级到当前玩家等级
+            const levelDiff = riceVillageData.player.level - riceVillageData.cat.level;
+            for (let i = 0; i < levelDiff; i++) {
+                if (type === 'tank') {
+                    riceVillageData.cat.maxHp += 20;
+                    riceVillageData.cat.power += 1;
+                } else if (type === 'damage') {
+                    riceVillageData.cat.maxHp += 5;
+                    riceVillageData.cat.power += 10;
+                }
+            }
+
+            riceVillageData.cat.level = riceVillageData.player.level;
+            riceVillageData.cat.hp = riceVillageData.cat.maxHp; // 回满血
+
+            const typeName = type === 'tank' ? '坦克型' : '输出型';
+            showWin95Modal('升级完成', `${riceVillageData.cat.name}选择了${typeName}升级路线！<br>等级已同步到${riceVillageData.cat.level}级`, '🎉');
+
+            updateDisplay();
+            saveRiceVillageData();
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            // 更新玩家状态
+            document.getElementById('player-level').textContent = `${riceVillageData.player.level}级`;
+            document.getElementById('player-hp').textContent = `${riceVillageData.player.hp}/${riceVillageData.player.maxHp}`;
+            document.getElementById('player-power').textContent = riceVillageData.player.power;
+            document.getElementById('player-stamina').textContent = `${riceVillageData.player.stamina}/${riceVillageData.player.maxStamina}`;
+
+            // 更新经验条
+            const requiredExp = getExpRequiredForLevel(riceVillageData.player.level);
+            const expPercent = Math.min(100, (riceVillageData.player.exp / requiredExp) * 100);
+            document.getElementById('exp-fill').style.width = `${expPercent}%`;
+            document.getElementById('exp-text').textContent = `${riceVillageData.player.exp}/${requiredExp} 经验`;
+
+            // 更新猫咪状态
+            document.getElementById('cat-level').textContent = `${riceVillageData.cat.level}级`;
+            document.getElementById('cat-hp').textContent = `${riceVillageData.cat.hp}/${riceVillageData.cat.maxHp}`;
+            document.getElementById('cat-power').textContent = riceVillageData.cat.power;
+
+            // 更新猫咪类型显示
+            const catTypeElement = document.getElementById('cat-type');
+            if (catTypeElement) {
+                if (riceVillageData.cat.type === 'tank') {
+                    catTypeElement.textContent = '🛡️坦克';
+                } else if (riceVillageData.cat.type === 'damage') {
+                    catTypeElement.textContent = '⚔️输出';
+                } else {
+                    catTypeElement.textContent = '未选择';
+                }
+            }
+
+            // 更新装备显示
+            let equipmentText = "无装备";
+            if (riceVillageData.player.weapon || riceVillageData.player.armor) {
+                let parts = [];
+                if (riceVillageData.player.weapon) parts.push(riceVillageData.player.weapon.name);
+                if (riceVillageData.player.armor) parts.push(riceVillageData.player.armor.name);
+                equipmentText = parts.join(", ");
+            }
+            document.getElementById('player-equipment').textContent = equipmentText;
+        }
+
+        // 体力自动恢复
+        function startStaminaRegeneration() {
+            setInterval(() => {
+                if (riceVillageData.player.stamina < riceVillageData.player.maxStamina) {
+                    riceVillageData.player.stamina = Math.min(
+                        riceVillageData.player.maxStamina, 
+                        riceVillageData.player.stamina + 1
+                    );
+                    updateDisplay();
+                }
+            }, 30000); // 每30秒恢复1点体力
+        }
+
+        // 打坐恢复功能
+        let meditationTimer = null;
+        let meditationStartTime = 0;
+
+        function meditate() {
+            if (meditationTimer) {
+                alert('已在打坐中，请等待完成！');
+                return;
+            }
+
+            if (riceVillageData.player.hp >= riceVillageData.player.maxHp) {
+                alert('血量已满，无需打坐！');
+                return;
+            }
+
+            // 开始打坐
+            meditationStartTime = Date.now();
+            meditationTimer = setTimeout(() => {
+                // 20秒后恢复满血
+                riceVillageData.player.hp = riceVillageData.player.maxHp;
+                riceVillageData.cat.hp = riceVillageData.cat.maxHp;
+                meditationTimer = null;
+                updateDisplay();
+                alert('打坐完成！血量已恢复！');
+            }, 20000);
+
+            updateMeditationDisplay();
+        }
+
+        function updateMeditationDisplay() {
+            const meditateBtn = document.querySelector('button[onclick="meditate()"]');
+            if (meditationTimer) {
+                const elapsed = Date.now() - meditationStartTime;
+                const remaining = Math.max(0, 20000 - elapsed);
+                const seconds = Math.ceil(remaining / 1000);
+
+                if (seconds > 0) {
+                    meditateBtn.textContent = `打坐中... ${seconds}秒`;
+                    meditateBtn.disabled = true;
+                    setTimeout(updateMeditationDisplay, 1000);
+                } else {
+                    meditateBtn.textContent = '打坐恢复';
+                    meditateBtn.disabled = false;
+                }
+            } else {
+                meditateBtn.textContent = '打坐恢复';
+                meditateBtn.disabled = false;
+            }
+        }
+
+        // 悬浮背包功能 - 简化版本
+        function toggleFloatingBag() {
+            console.log('背包按钮被点击');
+
+            const panel = document.getElementById('floating-bag-panel');
+            if (!panel) {
+                console.error('找不到背包面板');
+                return;
+            }
+
+            // 直接切换显示状态
+            if (panel.style.display === 'block') {
+                panel.style.display = 'none';
+                console.log('隐藏背包');
+            } else {
+                panel.style.display = 'block';
+                console.log('显示背包');
+                updateFloatingBagDisplay();
+            }
+        }
+
+        // 更新悬浮背包显示
+        function updateFloatingBagDisplay() {
+            const floatingBagContent = document.getElementById('floating-bag-content');
+
+            // 直接从localStorage获取最新金币数
+            let currentFunds = 0;
+            try {
+                const gameData = localStorage.getItem('gameData');
+                if (gameData) {
+                    const data = JSON.parse(gameData);
+                    currentFunds = data.funds || 0;
+                    console.log('背包显示: 获取到金币数:', currentFunds);
+                }
+            } catch (error) {
+                console.error('背包显示: 获取金币失败:', error);
+            }
+
+            let bagContent = `
+                <div style="margin-bottom: 15px; padding: 8px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px;">
+                    <div style="font-weight: 500; color: #374151; margin-bottom: 4px;">💰 金币</div>
+                    <div style="color: #6b7280; font-size: 11px;">${currentFunds} 金币</div>
+                </div>
+            `;
+
+            // 显示背包物品
+            const hasItems = Object.keys(riceVillageData.inventory).some(item => riceVillageData.inventory[item] > 0);
+
+            if (hasItems) {
+                bagContent += '<div style="margin-bottom: 10px; font-weight: 500; color: #374151;">物品：</div>';
+
+                for (const [itemName, quantity] of Object.entries(riceVillageData.inventory)) {
+                    if (quantity > 0) {
+                        bagContent += `
+                            <div style="margin-bottom: 8px; padding: 6px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px;">
+                                <div style="font-weight: 500; color: #374151; font-size: 11px;">${itemName}</div>
+                                <div style="color: #6b7280; font-size: 10px;">数量: ${quantity}</div>
+                            </div>
+                        `;
+                    }
+                }
+            } else {
+                bagContent += '<div style="text-align: center; color: #6b7280; font-size: 11px; margin-top: 10px;">暂无其他物品</div>';
+            }
+
+            floatingBagContent.innerHTML = bagContent;
+        }
+
+        // 背包和任务日志功能（保留原有模态框功能）
+        function openBag() {
+            console.log('导航栏背包按钮被点击');
+            toggleFloatingBag();
+        }
+
+        function closeBag() {
+            const panel = document.getElementById('floating-bag-panel');
+            if (panel) {
+                panel.style.display = 'none';
+                console.log('背包已关闭');
+            }
+        }
+
+        function openQuestLog() {
+            const modal = document.getElementById('quest-modal');
+            if (modal) {
+                modal.style.display = 'block';
+                updateQuestDisplay();
+            } else {
+                console.error('任务日志模态框未找到');
+            }
+        }
+
+        function closeQuestLog() {
+            const modal = document.getElementById('quest-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function updateBagDisplay() {
+            const bagItems = document.getElementById('bag-items');
+            bagItems.innerHTML = '';
+            
+            if (Object.keys(riceVillageData.inventory).length === 0) {
+                bagItems.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #666;">背包为空</td></tr>';
+                return;
+            }
+            
+            for (const [item, count] of Object.entries(riceVillageData.inventory)) {
+                if (count > 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item}</td>
+                        <td>${count}</td>
+                        <td>-</td>
+                    `;
+                    bagItems.appendChild(row);
+                }
+            }
+        }
+
+        function updateQuestDisplay() {
+            const questContent = document.getElementById('quest-content');
+            if (riceVillageData.currentQuest) {
+                questContent.innerHTML = `
+                    <h4>当前任务: ${riceVillageData.currentQuest}</h4>
+                    <p>进度: ${riceVillageData.questProgress}/${riceVillageData.questTarget}</p>
+                `;
+            } else {
+                questContent.innerHTML = '<p style="text-align: center; color: #666;">暂无任务</p>';
+            }
+
+            // 同时更新悬浮任务面板
+            updateFloatingQuestDisplay();
+        }
+
+        // 悬浮任务球功能
+        function toggleFloatingQuest() {
+            const panel = document.getElementById('floating-quest-panel');
+            const isVisible = panel.classList.contains('show');
+
+            if (isVisible) {
+                panel.classList.remove('show');
+            } else {
+                panel.classList.add('show');
+                updateFloatingQuestDisplay();
+            }
+        }
+
+        // 更新悬浮任务显示
+        function updateFloatingQuestDisplay() {
+            const floatingContent = document.getElementById('floating-quest-content');
+            const questBall = document.getElementById('floating-quest-ball');
+
+            console.log(`更新任务显示: currentQuest=${riceVillageData.currentQuest}, progress=${riceVillageData.questProgress}/${riceVillageData.questTarget}`); // 调试日志
+
+            if (riceVillageData.currentQuest) {
+                const isCompleted = riceVillageData.questProgress >= riceVillageData.questTarget;
+
+                // 更新任务球显示
+                if (isCompleted) {
+                    questBall.textContent = '✓';
+                    questBall.style.background = '#dcfce7';
+                    questBall.style.borderColor = '#16a34a';
+                    questBall.style.color = '#15803d';
+                } else {
+                    questBall.textContent = '!';
+                    questBall.style.background = '#fef3c7';
+                    questBall.style.borderColor = '#f59e0b';
+                    questBall.style.color = '#92400e';
+                }
+
+                // 更新悬浮面板内容
+                floatingContent.innerHTML = `
+                    <div class="quest-item">
+                        <div class="quest-title">${riceVillageData.currentQuest} ${isCompleted ? '✅' : ''}</div>
+                        <div class="quest-progress">进度: ${riceVillageData.questProgress}/${riceVillageData.questTarget}</div>
+                        <div style="margin-top: 4px;">
+                            <div class="progress-bar" style="height: 12px;">
+                                <div class="progress-fill" style="width: ${(riceVillageData.questProgress / riceVillageData.questTarget) * 100}%"></div>
+                                <div class="progress-text" style="font-size: 10px;">${Math.round((riceVillageData.questProgress / riceVillageData.questTarget) * 100)}%</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // 添加任务提示
+                if (isCompleted) {
+                    floatingContent.innerHTML += `
+                        <div style="font-size: 11px; color: #16a34a; margin-top: 8px; font-weight: 500;">
+                            🎉 任务完成！请与王婆婆对话交付任务
+                        </div>
+                    `;
+                } else if (riceVillageData.currentQuest.includes('采集')) {
+                    floatingContent.innerHTML += `
+                        <div style="font-size: 11px; color: #6b7280; margin-top: 8px;">
+                            💡 提示：点击植物资源中的"采集"按钮
+                        </div>
+                    `;
+                } else if (riceVillageData.currentQuest.includes('击败')) {
+                    floatingContent.innerHTML += `
+                        <div style="font-size: 11px; color: #6b7280; margin-top: 8px;">
+                            💡 提示：点击野生动物中的"攻击"按钮
+                        </div>
+                    `;
+                } else if (riceVillageData.currentQuest.includes('馒头')) {
+                    floatingContent.innerHTML += `
+                        <div style="font-size: 11px; color: #6b7280; margin-top: 8px;">
+                            💡 提示：与王大石对话交付馒头
+                        </div>
+                    `;
+                }
+            } else {
+                // 无任务状态
+                questBall.textContent = '任务';
+                questBall.style.background = '#f3f4f6';
+                questBall.style.borderColor = '#d1d5db';
+                questBall.style.color = '#374151';
+
+                floatingContent.innerHTML = `
+                    <div style="text-align: center; color: #6b7280; font-size: 11px;">暂无任务</div>
+                    <div style="font-size: 11px; color: #6b7280; margin-top: 8px;">
+                        💡 提示：与王婆婆对话开始任务链
+                    </div>
+                `;
+            }
+        }
+
+        // 手动云端同步
+        function manualCloudSync() {
+            const cloudSaveConfig = JSON.parse(localStorage.getItem('cloudSaveConfig') || '{}');
+
+            if (!cloudSaveConfig.githubToken || !cloudSaveConfig.gistId) {
+                showWin95Modal('云端同步', '请先在茶铺主页设置GitHub Token和Gist ID', '☁️');
+                return;
+            }
+
+            showWin95Modal('云端同步', '正在同步数据到云端...', '☁️');
+
+            // 保存到云端
+            saveToGitHubGist();
+
+            // 1秒后从云端加载
+            setTimeout(() => {
+                loadFromGitHubGist();
+                showWin95Modal('云端同步', '数据同步完成！', '✅');
+            }, 2000);
+        }
+
+        // 强制刷新数据
+        function forceRefreshData() {
+            console.log('强制刷新数据开始...');
+
+            // 重置所有怪物状态
+            Object.keys(riceVillageData.monsters).forEach(monsterName => {
+                const monster = riceVillageData.monsters[monsterName];
+                monster.available = true;
+                monster.hp = monster.maxHp;
+                console.log(`重置${monsterName}: available=${monster.available}, hp=${monster.hp}/${monster.maxHp}`);
+                updateMonsterStatus(monsterName, '可攻击', '');
+                updateMonsterHP(monsterName);
+            });
+
+            // 重新加载茶铺数据
+            loadTeaShopData();
+
+            // 更新所有显示
+            updateDisplay();
+            updateFloatingQuestDisplay();
+            updateFloatingBagDisplay();
+
+            // 检查localStorage中的数据
+            const teaShopData = localStorage.getItem('gameData');
+            console.log('当前localStorage中的茶铺数据:', teaShopData ? JSON.parse(teaShopData) : '无数据');
+
+            showWin95Modal('数据刷新', '数据已强制刷新！所有怪物已重置为可攻击状态。', '🔄');
+        }
+
+        // 测试背包功能
+        function testBag() {
+            console.log('测试背包功能开始...');
+
+            const panel = document.getElementById('floating-bag-panel');
+            const ball = document.getElementById('floating-bag-ball');
+
+            console.log('背包面板元素:', panel);
+            console.log('背包球元素:', ball);
+
+            if (panel) {
+                console.log('强制显示背包面板...');
+                panel.style.display = 'block';
+                panel.classList.add('show');
+                updateFloatingBagDisplay();
+                console.log('背包面板已强制显示');
+            } else {
+                console.error('找不到背包面板！');
+            }
+        }
+
+        // 强制更新金币显示
+        function forceUpdateFunds() {
+            console.log('强制更新金币显示...');
+
+            // 尝试多个可能的localStorage键名
+            const possibleKeys = ['teaGameData', 'cuteTeaShop_save', 'teaGameSave_1', 'gameData'];
+            let foundData = false;
+
+            for (const key of possibleKeys) {
+                const data = localStorage.getItem(key);
+                console.log(`检查${key}:`, data ? '有数据' : '无数据');
+
+                if (data) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        if (parsed && parsed.funds !== undefined) {
+                            const funds = parsed.funds || 0;
+                            console.log(`从${key}解析出金币数:`, funds);
+
+                            // 强制更新顶部显示
+                            const operationFunds = document.getElementById('operation-funds');
+                            if (operationFunds) {
+                                operationFunds.textContent = `${funds} 金币`;
+                                console.log('已更新顶部金币显示');
+                            }
+
+                            // 强制更新背包显示
+                            updateFloatingBagDisplay();
+
+                            showWin95Modal('金币更新', `已从${key}更新金币显示：${funds} 金币`, '💰');
+                            foundData = true;
+                            break;
+                        }
+                    } catch (e) {
+                        console.log(`${key}数据解析失败:`, e);
+                    }
+                }
+            }
+
+            if (!foundData) {
+                console.error('所有数据源都找不到金币数据');
+                console.log('localStorage所有键:', Object.keys(localStorage));
+                showWin95Modal('更新失败', '找不到任何茶铺数据，请检查是否从茶铺正确进入稻香村', '❌');
+            }
+        }
+
+        // 清除稻香村进度
+        function clearRiceVillageProgress() {
+            const confirmContent = `
+                <div style="text-align: center; line-height: 1.6;">
+                    <h3 style="color: #dc2626; margin: 0 0 15px 0;">⚠️ 确认清除</h3>
+                    <div style="margin-bottom: 15px; padding: 12px; background: #fef2f2; border: 1px inset #c0c0c0;">
+                        <div style="color: #dc2626; margin-bottom: 8px; font-weight: bold;">即将清除所有稻香村进度：</div>
+                        <div style="color: #666; font-size: 11px; text-align: left;">
+                            • 玩家等级重置为1级<br>
+                            • 猫咪等级重置为1级<br>
+                            • 所有任务进度清除<br>
+                            • 背包物品清空<br>
+                            • NPC对话重置<br>
+                            • 装备清除
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button onclick="confirmClearProgress()" style="margin: 5px; padding: 8px 15px; background: #dc2626; color: white; border: 1px outset #dc2626;">确认清除</button>
+                        <button onclick="closeWin95Modal()" style="margin: 5px; padding: 8px 15px; background: #6b7280; color: white; border: 1px outset #6b7280;">取消</button>
+                    </div>
+                </div>
+            `;
+            showWin95Modal('清除稻香村进度', confirmContent, '⚠️');
+        }
+
+        // 确认清除进度
+        function confirmClearProgress() {
+            console.log('开始清除稻香村进度...');
+
+            // 重置稻香村数据为初始状态
+            riceVillageData = {
+                player: {
+                    name: "玩家",
+                    hp: 100,
+                    maxHp: 100,
+                    stamina: 100,
+                    maxStamina: 100,
+                    power: 5,
+                    level: 1,
+                    exp: 0,
+                    weapon: null,
+                    armor: null
+                },
+                cat: {
+                    name: "猫咪伙伴",
+                    hp: 100,
+                    maxHp: 100,
+                    power: 10,
+                    level: 1,
+                    type: null
+                },
+                inventory: {},
+                npcs: {
+                    "村长刘洋": { questStage: 0, lastTalkTime: 0 },
+                    "王婆婆": { questStage: 0, lastTalkTime: 0 },
+                    "李复": { questStage: 0, lastTalkTime: 0 },
+                    "王大石": { questStage: 0, lastTalkTime: 0 },
+                    "余半仙": { questStage: 0, lastTalkTime: 0 },
+                    "武器铺老板": { questStage: 0, lastTalkTime: 0 }
+                },
+                currentQuest: null,
+                questProgress: 0,
+                questTarget: 0,
+                plants: {
+                    "止血草": { available: true, lastGathered: 0 },
+                    "野菜": { available: true, lastGathered: 0 },
+                    "灵芝": { available: true, lastGathered: 0 }
+                },
+                monsters: {
+                    "果子狸": { hp: 10, maxHp: 10, attack: 1, available: true, lastKilled: 0 },
+                    "猴子": { hp: 15, maxHp: 15, attack: 2, available: true, lastKilled: 0 },
+                    "山贼": { hp: 25, maxHp: 25, attack: 5, available: true, lastKilled: 0 }
+                },
+                questCompleted: {}
+            };
+
+            // 保存重置后的数据
+            saveRiceVillageData();
+
+            // 更新显示
+            updateDisplay();
+            updateFloatingQuestDisplay();
+            updateFloatingBagDisplay();
+
+            // 重置所有怪物血量显示
+            Object.keys(riceVillageData.monsters).forEach(monsterName => {
+                updateMonsterHP(monsterName);
+                updateMonsterStatus(monsterName, '可攻击', '');
+            });
+
+            closeWin95Modal();
+            showWin95Modal('清除完成', '稻香村进度已全部清除！可以重新开始冒险了。', '✅');
+
+            console.log('稻香村进度清除完成');
+        }
+
+        // 不自动关闭悬浮面板，只能手动点击关闭
+        // 移除自动关闭功能，让玩家可以常开任务面板
+
+        // 检查任务进度
+        function checkQuestProgress(action, target) {
+            console.log(`检查任务进度: action=${action}, target=${target}, currentQuest=${riceVillageData.currentQuest}`); // 调试日志
+
+            if (!riceVillageData.currentQuest) {
+                console.log('没有当前任务，跳过进度检查');
+                return;
+            }
+
+            let progressMade = false;
+
+            // 检查不同类型的任务
+            if (riceVillageData.currentQuest === '采集止血草' && action === '采集' && target === '止血草') {
+                riceVillageData.questProgress++;
+                progressMade = true;
+                console.log(`采集止血草任务进度+1，当前进度: ${riceVillageData.questProgress}/${riceVillageData.questTarget}`);
+            } else if (riceVillageData.currentQuest === '击败果子狸' && action === '击败' && target === '果子狸') {
+                riceVillageData.questProgress++;
+                progressMade = true;
+                console.log(`击败果子狸任务进度+1，当前进度: ${riceVillageData.questProgress}/${riceVillageData.questTarget}`);
+            } else if (riceVillageData.currentQuest === '击败猴子' && action === '击败' && target === '猴子') {
+                riceVillageData.questProgress++;
+                progressMade = true;
+                console.log(`击败猴子任务进度+1，当前进度: ${riceVillageData.questProgress}/${riceVillageData.questTarget}`);
+            } else if (riceVillageData.currentQuest === '击败山贼' && action === '击败' && target === '山贼') {
+                riceVillageData.questProgress++;
+                progressMade = true;
+                console.log(`击败山贼任务进度+1，当前进度: ${riceVillageData.questProgress}/${riceVillageData.questTarget}`);
+            } else {
+                console.log(`任务条件不匹配: 当前任务="${riceVillageData.currentQuest}", 动作="${action}", 目标="${target}"`);
+            }
+
+            if (progressMade) {
+                // 立即保存数据
+                saveRiceVillageData();
+
+                // 更新悬浮任务显示
+                updateFloatingQuestDisplay();
+
+                // 不自动完成任务，只更新进度
+                // 任务完成需要玩家主动与NPC交互
+                if (riceVillageData.questProgress >= riceVillageData.questTarget) {
+                    // 标记任务可以交付，但不自动完成
+                    console.log(`📋 任务进度已完成！请回去找NPC交付任务。`);
+                }
+            }
+        }
+
+        // NPC交付任务完成
+        function completeQuestWithNPC(questName) {
+            console.log(`完成任务: ${questName}`); // 调试日志
+
+            // 清除当前任务
+            riceVillageData.currentQuest = null;
+            riceVillageData.questProgress = 0;
+            riceVillageData.questTarget = 0;
+
+            let message = '';
+            // 根据任务类型给予奖励和推进NPC任务阶段
+            if (questName === '采集止血草') {
+                riceVillageData.npcs['王婆婆'].questStage = 5;
+                gainExp(150);
+                message = '采集任务完成！获得150经验！';
+            } else if (questName === '击败果子狸') {
+                riceVillageData.npcs['王婆婆'].questStage = 7;
+                gainExp(200);
+                message = '果子狸讨伐完成！获得200经验！';
+            } else if (questName === '击败猴子') {
+                riceVillageData.npcs['王婆婆'].questStage = 9;
+                gainExp(250);
+                message = '猴子讨伐完成！获得250经验！';
+            } else if (questName === '击败山贼') {
+                riceVillageData.npcs['王婆婆'].questStage = 11;
+                gainExp(300);
+                message = '山贼讨伐完成！获得300经验！这是最后的任务！';
+            } else {
+                message = '任务完成！';
+            }
+
+            // 立即更新悬浮任务显示
+            updateFloatingQuestDisplay();
+            console.log(`任务完成后状态: currentQuest=${riceVillageData.currentQuest}, questStage=${riceVillageData.npcs['王婆婆'].questStage}`); // 调试日志
+
+            return message;
+        }
+
+        // 采集植物功能
+        function gatherPlant(plantName) {
+            const plant = riceVillageData.plants[plantName];
+            if (!plant || !plant.available) {
+                alert(`${plantName}暂时无法采集！`);
+                return;
+            }
+
+            if (riceVillageData.player.stamina < 1) {
+                alert('体力不足！请等待体力恢复或打坐恢复。');
+                return;
+            }
+
+            // 消耗体力
+            riceVillageData.player.stamina--;
+
+            // 设置采集状态
+            plant.available = false;
+            plant.lastGathered = Date.now();
+
+            // 显示采集进度
+            updatePlantStatus(plantName, '采集中...', 'progress');
+
+            setTimeout(() => {
+                // 采集完成
+                if (!riceVillageData.inventory[plantName]) {
+                    riceVillageData.inventory[plantName] = 0;
+                }
+                riceVillageData.inventory[plantName]++;
+
+                // 获得少量经验
+                gainExp(2);
+
+                // 立即刷新背包显示
+                updateFloatingBagDisplay();
+
+                // 检查任务进度
+                checkQuestProgress('采集', plantName);
+
+                // 3秒后刷新
+                setTimeout(() => {
+                    plant.available = true;
+                    updatePlantStatus(plantName, '可采集', '');
+                }, 3000);
+
+                // 立即显示刷新状态
+                updatePlantStatus(plantName, '刷新中...', '');
+
+                updateDisplay();
+                saveRiceVillageData(); // 保存数据
+                // 不显示弹窗，只在控制台记录
+                console.log(`采集到 ${plantName} x1！获得 2 经验！`);
+            }, 3000);
+
+            updateDisplay();
+        }
+
+        // 攻击怪物功能
+        function attackMonster(monsterName) {
+            const monster = riceVillageData.monsters[monsterName];
+            console.log(`攻击${monsterName}: 怪物数据=`, monster); // 调试日志
+
+            if (!monster) {
+                alert(`找不到怪物：${monsterName}！`);
+                return;
+            }
+
+            // 移除available检查，让所有怪物都可以攻击
+            console.log(`开始攻击${monsterName}，当前血量: ${monster.hp}/${monster.maxHp}`); // 调试日志
+
+            if (riceVillageData.player.stamina < 2) {
+                alert('体力不足！攻击需要2点体力。');
+                return;
+            }
+
+            // 消耗体力
+            riceVillageData.player.stamina -= 2;
+
+            // 设置战斗状态
+            monster.available = false;
+
+            // 显示战斗进度
+            updateMonsterStatus(monsterName, '战斗中...', 'progress');
+
+            setTimeout(() => {
+                // 战斗结算
+                const playerAttack = riceVillageData.player.power + (riceVillageData.player.weapon ? riceVillageData.player.weapon.attack : 0);
+                const catAttack = riceVillageData.cat.power;
+                const totalDamage = playerAttack + catAttack;
+
+                // 怪物受伤
+                console.log(`${monsterName} 受到 ${totalDamage} 点伤害，血量从 ${monster.hp} 变为 ${monster.hp - totalDamage}`);
+                monster.hp -= totalDamage;
+
+                // 立即更新血量显示
+                updateMonsterHP(monsterName);
+
+                if (monster.hp <= 0) {
+                    console.log(`${monsterName} 死亡！准备增加任务进度`);  // 调试日志
+                    // 怪物死亡，获得经验
+                    let expGain = 0;
+                    switch(monsterName) {
+                        case '果子狸':
+                            expGain = 8;
+                            break;
+                        case '猴子':
+                            expGain = 12;
+                            break;
+                        case '山贼':
+                            expGain = 20;
+                            break;
+                    }
+
+                    monster.hp = monster.maxHp; // 重置血量
+                    updateMonsterHP(monsterName); // 更新血量显示
+
+                    // 3秒后刷新（缩短刷新时间）
+                    setTimeout(() => {
+                        monster.available = true;
+                        updateMonsterStatus(monsterName, '可攻击', '');
+                        updateMonsterHP(monsterName); // 确保血量显示正确
+                        console.log(`${monsterName}刷新完成，可以再次攻击`);
+                    }, 3000);
+
+                    // 立即显示刷新状态
+                    updateMonsterStatus(monsterName, '刷新中...', '');
+
+                    gainExp(expGain);
+
+                    // 检查任务进度 - 只有在怪物真正死亡时才调用
+                    console.log(`${monsterName} 已死亡，准备检查任务进度: 击败 ${monsterName}`); // 调试日志
+                    console.log(`当前任务: ${riceVillageData.currentQuest}, 任务进度: ${riceVillageData.questProgress}/${riceVillageData.questTarget}`); // 调试日志
+                    checkQuestProgress('击败', monsterName);
+                    console.log(`任务进度检查完成，新进度: ${riceVillageData.questProgress}/${riceVillageData.questTarget}`); // 调试日志
+
+                    // 不显示弹窗，只在控制台记录
+                    console.log(`击败了 ${monsterName}！获得 ${expGain} 经验！`);
+                } else {
+                    // 怪物反击
+                    const monsterDamage = monster.attack;
+                    let damageMessage = '';
+
+                    // 随机攻击玩家或猫咪
+                    if (Math.random() < 0.5) {
+                        riceVillageData.player.hp = Math.max(0, riceVillageData.player.hp - monsterDamage);
+                        damageMessage = `${monsterName}攻击了你，造成${monsterDamage}点伤害！`;
+
+                        if (riceVillageData.player.hp === 0) {
+                            damageMessage += '\n你被击败了！请打坐恢复。';
+                            // 装备损坏10%
+                            if (riceVillageData.player.weapon && Math.random() < 0.1) {
+                                damageMessage += '\n武器受损！';
+                                riceVillageData.player.weapon.durability--;
+                                if (riceVillageData.player.weapon.durability <= 0) {
+                                    damageMessage += '\n武器损坏了！';
+                                    riceVillageData.player.weapon = null;
+                                }
+                            }
+                        }
+                    } else {
+                        riceVillageData.cat.hp = Math.max(0, riceVillageData.cat.hp - monsterDamage);
+                        damageMessage = `${monsterName}攻击了${riceVillageData.cat.name}，造成${monsterDamage}点伤害！`;
+
+                        if (riceVillageData.cat.hp === 0) {
+                            damageMessage += `\n${riceVillageData.cat.name}被击败了！请打坐恢复。`;
+                        }
+                    }
+
+                    // 只在死亡时弹窗，否则只记录日志
+                    if (riceVillageData.player.hp === 0 || riceVillageData.cat.hp === 0) {
+                        showWin95Modal('战斗结果', `对${monsterName}造成${totalDamage}点伤害！\n${damageMessage}`, '💀');
+                    } else {
+                        console.log(`对${monsterName}造成${totalDamage}点伤害！${damageMessage}`);
+                    }
+
+                    // 继续战斗（怪物没死，立即可以再次攻击）
+                    monster.available = true;
+                    console.log(`${monsterName}没死，血量剩余${monster.hp}，立即可以再次攻击`); // 调试日志
+                    updateMonsterStatus(monsterName, '可攻击', '');
+
+                    // 确保按钮可以点击
+                    const actionElement = document.getElementById(`monster-action-${monsterName}`);
+                    if (actionElement) {
+                        actionElement.innerHTML = `<button class="action-btn" onclick="attackMonster('${monsterName}')">攻击</button>`;
+                    }
+                }
+
+                updateDisplay();
+            }, 5000);
+
+            updateDisplay();
+        }
+
+        // 更新植物状态显示
+        function updatePlantStatus(plantName, status, progress) {
+            const plantRows = document.querySelectorAll('#plant-list tr');
+            plantRows.forEach(row => {
+                const nameCell = row.cells[0];
+                if (nameCell && nameCell.textContent === plantName) {
+                    const statusCell = row.cells[2];
+                    const actionCell = row.cells[3];
+
+                    if (status === '可采集') {
+                        statusCell.innerHTML = '<span class="status-indicator status-available">可采集</span>';
+                        actionCell.innerHTML = `<button class="action-btn" onclick="gatherPlant('${plantName}')">采集</button>`;
+                    } else if (progress === 'progress') {
+                        statusCell.innerHTML = `<span class="status-indicator status-busy">${status}</span>`;
+                        actionCell.innerHTML = `
+                            <div class="progress-bar" style="width: 80px; height: 16px;">
+                                <div class="progress-fill" id="progress-${plantName}" style="width: 0%"></div>
+                                <div class="progress-text">0%</div>
+                            </div>
+                        `;
+                        // 启动进度条动画
+                        startProgressAnimation(plantName, 3000);
+                    } else {
+                        statusCell.innerHTML = `<span class="status-indicator status-busy">${status}</span>`;
+                        actionCell.innerHTML = `<span class="text-progress">${progress}</span>`;
+                    }
+                }
+            });
+        }
+
+        // 更新怪物状态显示
+        function updateMonsterStatus(monsterName, status, progress) {
+            const statusElement = document.getElementById(`monster-status-${monsterName}`);
+            const actionElement = document.getElementById(`monster-action-${monsterName}`);
+
+            if (!statusElement || !actionElement) {
+                console.error(`找不到怪物元素: ${monsterName}`);
+                return;
+            }
+
+            if (status === '可攻击') {
+                statusElement.innerHTML = '<span class="status-indicator status-available">可攻击</span>';
+                actionElement.innerHTML = `<button class="action-btn" onclick="attackMonster('${monsterName}')">攻击</button>`;
+            } else if (progress === 'progress') {
+                statusElement.innerHTML = `<span class="status-indicator status-busy">${status}</span>`;
+                actionElement.innerHTML = `
+                    <div class="progress-bar" style="width: 80px; height: 16px;">
+                        <div class="progress-fill" id="progress-${monsterName}" style="width: 0%"></div>
+                        <div class="progress-text">0%</div>
+                    </div>
+                `;
+                // 启动进度条动画
+                startProgressAnimation(monsterName, 5000);
+            } else {
+                statusElement.innerHTML = `<span class="status-indicator status-busy">${status}</span>`;
+                actionElement.innerHTML = `<span class="text-progress">${progress}</span>`;
+            }
+        }
+
+        // 更新怪物血量显示
+        function updateMonsterHP(monsterName) {
+            const monster = riceVillageData.monsters[monsterName];
+            const hpElement = document.getElementById(`monster-hp-${monsterName}`);
+
+            if (!monster || !hpElement) {
+                console.error(`找不到怪物或血量元素: ${monsterName}`);
+                return;
+            }
+
+            const hpPercent = Math.max(0, (monster.hp / monster.maxHp) * 100);
+            const progressFill = hpElement.querySelector('.progress-fill');
+            const progressText = hpElement.querySelector('.progress-text');
+
+            if (progressFill && progressText) {
+                progressFill.style.width = `${hpPercent}%`;
+                progressText.textContent = `${Math.max(0, monster.hp)}/${monster.maxHp}`;
+
+                // 根据血量百分比改变颜色
+                if (hpPercent > 60) {
+                    progressFill.style.backgroundColor = '#9ca3af'; // 灰色 - 健康
+                } else if (hpPercent > 30) {
+                    progressFill.style.backgroundColor = '#f59e0b'; // 黄色 - 受伤
+                } else {
+                    progressFill.style.backgroundColor = '#ef4444'; // 红色 - 濒死
+                }
+            }
+        }
+
+        // 进度条动画
+        function startProgressAnimation(id, duration) {
+            const progressFill = document.getElementById(`progress-${id}`);
+            const progressText = progressFill ? progressFill.nextElementSibling : null;
+
+            if (!progressFill || !progressText) return;
+
+            let startTime = Date.now();
+
+            function updateProgress() {
+                const elapsed = Date.now() - startTime;
+                const percent = Math.min(100, (elapsed / duration) * 100);
+
+                progressFill.style.width = `${percent}%`;
+                progressText.textContent = `${Math.round(percent)}%`;
+
+                if (percent < 100) {
+                    requestAnimationFrame(updateProgress);
+                }
+            }
+
+            updateProgress();
+        }
+
+        // NPC对话功能 - 基础版本
+        function talkToNPC(npcName) {
+            const npc = riceVillageData.npcs[npcName];
+            if (!npc) return;
+
+            let dialogue = '';
+            switch(npcName) {
+                case '村长刘洋':
+                    dialogue = '欢迎来到稻香村！这里是个和平的地方。';
+                    break;
+                case '王婆婆':
+                    if (npc.questStage === 0) {
+                        dialogue = '你好，年轻人！我是王婆婆。';
+                        npc.questStage = 1;
+                        // 不给经验，只是初次对话
+                    } else if (npc.questStage === 1) {
+                        dialogue = '这个馒头给你，请帮我交给王大石。';
+                        if (!riceVillageData.inventory['馒头']) {
+                            riceVillageData.inventory['馒头'] = 0;
+                        }
+                        riceVillageData.inventory['馒头']++;
+                        npc.questStage = 2;
+                        riceVillageData.currentQuest = '将馒头交给王大石';
+                        riceVillageData.questProgress = 0;
+
+                        // 立即刷新背包显示
+                        updateFloatingBagDisplay();
+                        riceVillageData.questTarget = 1;
+                        // 不在这里给经验，等交任务时给
+                    } else if (npc.questStage === 3) {
+                        dialogue = '请帮我采集5个止血草。';
+                        riceVillageData.currentQuest = '采集止血草';
+                        riceVillageData.questProgress = 0;
+                        riceVillageData.questTarget = 5;
+                        npc.questStage = 4;
+                        // 不在这里给经验
+                    } else if (npc.questStage === 4) {
+                        // 检查采集任务是否完成
+                        if (riceVillageData.currentQuest === '采集止血草' && riceVillageData.questProgress >= riceVillageData.questTarget) {
+                            dialogue = completeQuestWithNPC('采集止血草');
+                            // 任务完成后立即更新显示
+                            setTimeout(() => updateFloatingQuestDisplay(), 100);
+                        } else {
+                            dialogue = '请继续采集止血草，还需要' + (riceVillageData.questTarget - riceVillageData.questProgress) + '个。';
+                        }
+                    } else if (npc.questStage === 5) {
+                        dialogue = '请帮我击败3只果子狸。';
+                        riceVillageData.currentQuest = '击败果子狸';
+                        riceVillageData.questProgress = 0;
+                        riceVillageData.questTarget = 3;
+                        npc.questStage = 6;
+                        // 新任务开始后立即更新显示
+                        setTimeout(() => updateFloatingQuestDisplay(), 100);
+                    } else if (npc.questStage === 6) {
+                        // 检查果子狸任务是否完成
+                        if (riceVillageData.currentQuest === '击败果子狸' && riceVillageData.questProgress >= riceVillageData.questTarget) {
+                            dialogue = completeQuestWithNPC('击败果子狸');
+                            setTimeout(() => updateFloatingQuestDisplay(), 100);
+                        } else {
+                            dialogue = '请继续击败果子狸，还需要击败' + (riceVillageData.questTarget - riceVillageData.questProgress) + '只。';
+                        }
+                    } else if (npc.questStage === 7) {
+                        dialogue = '请帮我击败5只猴子。';
+                        riceVillageData.currentQuest = '击败猴子';
+                        riceVillageData.questProgress = 0;
+                        riceVillageData.questTarget = 5;
+                        npc.questStage = 8;
+                        setTimeout(() => updateFloatingQuestDisplay(), 100);
+                    } else if (npc.questStage === 8) {
+                        // 检查猴子任务是否完成
+                        if (riceVillageData.currentQuest === '击败猴子' && riceVillageData.questProgress >= riceVillageData.questTarget) {
+                            dialogue = completeQuestWithNPC('击败猴子');
+                            setTimeout(() => updateFloatingQuestDisplay(), 100);
+                        } else {
+                            dialogue = '请继续击败猴子，还需要击败' + (riceVillageData.questTarget - riceVillageData.questProgress) + '只。';
+                        }
+                    } else if (npc.questStage === 9) {
+                        dialogue = '最后的任务：请去村口击败5只山贼。';
+                        riceVillageData.currentQuest = '击败山贼';
+                        riceVillageData.questProgress = 0;
+                        riceVillageData.questTarget = 5;
+                        npc.questStage = 10;
+                        setTimeout(() => updateFloatingQuestDisplay(), 100);
+                    } else if (npc.questStage === 10) {
+                        // 检查山贼任务是否完成
+                        if (riceVillageData.currentQuest === '击败山贼' && riceVillageData.questProgress >= riceVillageData.questTarget) {
+                            dialogue = completeQuestWithNPC('击败山贼');
+                            setTimeout(() => updateFloatingQuestDisplay(), 100);
+                        } else {
+                            dialogue = '请继续击败山贼，还需要击败' + (riceVillageData.questTarget - riceVillageData.questProgress) + '只。';
+                        }
+                    } else if (npc.questStage === 11) {
+                        dialogue = '谢谢你完成了所有任务！这是精致的令牌，请收下。';
+                        if (!riceVillageData.inventory['精致令牌']) {
+                            riceVillageData.inventory['精致令牌'] = 0;
+                        }
+                        riceVillageData.inventory['精致令牌']++;
+                        npc.questStage = 12; // 任务完成
+                        riceVillageData.currentQuest = null;
+                        gainExp(300); // 最终奖励
+
+                        // 标记王婆婆任务链完成
+                        riceVillageData.questCompleted = riceVillageData.questCompleted || {};
+                        riceVillageData.questCompleted['王婆婆'] = true;
+
+                        // 立即刷新背包显示
+                        console.log('获得精致令牌，刷新背包显示');
+                        updateFloatingBagDisplay();
+
+                        // 保存数据
+                        saveRiceVillageData();
+                    } else if (npc.questStage === 12) {
+                        dialogue = '感谢你的帮助，年轻的冒险者！';
+                    } else {
+                        dialogue = '请完成当前任务。';
+                    }
+                    break;
+                case '王大石':
+                    if (riceVillageData.inventory['馒头'] && riceVillageData.inventory['馒头'] > 0) {
+                        dialogue = '谢谢你的馒头！王婆婆真是太好了。获得150经验！';
+                        riceVillageData.inventory['馒头']--;
+                        riceVillageData.currentQuest = null;
+                        riceVillageData.questProgress = 0;
+                        riceVillageData.questTarget = 0;
+                        // 触发王婆婆下一个任务
+                        riceVillageData.npcs['王婆婆'].questStage = 3;
+                        gainExp(150); // 完成任务奖励
+                        // 立即更新任务显示
+                        setTimeout(() => updateFloatingQuestDisplay(), 100);
+                    } else {
+                        dialogue = '你好！我是民兵队长王大石。';
+                        // 普通对话不给经验
+                    }
+                    break;
+                case '李复':
+                    dialogue = '李复冲你一笑，神秘不语。';
+                    break;
+                case '余半仙':
+                    const fortunes = [
+                        '今日宜采集，忌战斗。',
+                        '财运亨通，金币将至。',
+                        '小心野兽，注意安全。',
+                        '贵人相助，任务顺利。',
+                        '天时地利，万事如意。'
+                    ];
+                    dialogue = fortunes[Math.floor(Math.random() * fortunes.length)];
+                    break;
+                case '武器铺老板':
+                    dialogue = '欢迎光临武器铺！需要什么装备吗？';
+                    break;
+                default:
+                    dialogue = '你好！';
+            }
+
+            showWin95Modal(`与${npcName}对话`, dialogue, '💬');
+            updateDisplay();
+            updateFloatingQuestDisplay(); // 更新任务显示
+            saveRiceVillageData(); // 保存数据
+        }
+
+        // 武器铺功能
+        function openWeaponShop() {
+            // 从茶铺获取当前金币数
+            loadTeaShopData();
+            updateRepairSection();
+            document.getElementById('weapon-shop-modal').style.display = 'block';
+        }
+
+        function closeWeaponShop() {
+            document.getElementById('weapon-shop-modal').style.display = 'none';
+        }
+
+        // 购买武器
+        function buyWeapon(name, attack, price) {
+            // 检查金币
+            const currentFunds = getCurrentFunds();
+            if (currentFunds < price) {
+                showWin95Modal('金币不足', `购买${name}需要${price}金币，当前只有${currentFunds}金币。`, '💰');
+                return;
+            }
+
+            // 检查是否已有武器
+            if (riceVillageData.player.weapon) {
+                if (!confirm(`已装备${riceVillageData.player.weapon.name}，是否替换为${name}？\n旧武器将丢失！`)) {
+                    return;
+                }
+            }
+
+            // 扣除金币
+            deductFunds(price);
+
+            // 装备武器
+            riceVillageData.player.weapon = {
+                name: name,
+                attack: attack,
+                durability: 20,
+                maxDurability: 20
+            };
+
+            updateDisplay();
+            showWin95Modal('购买成功', `成功购买并装备${name}！<br>攻击力+${attack}`, '⚔️');
+        }
+
+        // 购买防具
+        function buyArmor(name, hpBonus, price) {
+            // 检查金币
+            const currentFunds = getCurrentFunds();
+            if (currentFunds < price) {
+                showWin95Modal('金币不足', `购买${name}需要${price}金币，当前只有${currentFunds}金币。`, '💰');
+                return;
+            }
+
+            // 检查是否已有防具
+            if (riceVillageData.player.armor) {
+                if (!confirm(`已装备${riceVillageData.player.armor.name}，是否替换为${name}？\n旧防具将丢失！`)) {
+                    return;
+                }
+                // 移除旧防具的血量加成
+                riceVillageData.player.maxHp -= riceVillageData.player.armor.hpBonus;
+                riceVillageData.player.hp = Math.min(riceVillageData.player.hp, riceVillageData.player.maxHp);
+            }
+
+            // 扣除金币
+            deductFunds(price);
+
+            // 装备防具
+            riceVillageData.player.armor = {
+                name: name,
+                hpBonus: hpBonus
+            };
+
+            // 增加血量上限
+            riceVillageData.player.maxHp += hpBonus;
+            riceVillageData.player.hp += hpBonus; // 装备时回复对应血量
+
+            updateDisplay();
+            showWin95Modal('购买成功', `成功购买并装备${name}！<br>血量上限+${hpBonus}`, '🛡️');
+        }
+
+        // 获取当前金币数（从多个数据源读取）
+        function getCurrentFunds() {
+            try {
+                // 尝试多个可能的localStorage键名
+                const possibleKeys = ['teaGameData', 'cuteTeaShop_save', 'teaGameSave_1', 'gameData'];
+
+                for (const key of possibleKeys) {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed && parsed.funds !== undefined) {
+                                console.log(`getCurrentFunds: 从${key}获取金币:`, parsed.funds);
+                                return parsed.funds;
+                            }
+                        } catch (e) {
+                            console.log(`getCurrentFunds: ${key}数据解析失败`);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('getCurrentFunds: 获取金币失败:', error);
+            }
+            console.log('getCurrentFunds: 没有找到金币数据，返回0');
+            return 0;
+        }
+
+        // 从数据库读取金币
+        function readFundsFromDatabase() {
+            try {
+                // 尝试从数据库读取
+                const request = indexedDB.open('TeaShopDB', 1);
+                request.onsuccess = function(event) {
+                    const db = event.target.result;
+                    if (db.objectStoreNames.contains('gameData')) {
+                        const transaction = db.transaction(['gameData'], 'readonly');
+                        const store = transaction.objectStore('gameData');
+                        const getRequest = store.get('currentGame');
+
+                        getRequest.onsuccess = function() {
+                            if (getRequest.result && getRequest.result.data) {
+                                const funds = getRequest.result.data.funds || 0;
+                                console.log('从IndexedDB获取金币:', funds);
+                                // 更新显示
+                                updateFundsDisplay(funds);
+                                return funds;
+                            }
+                        };
+                    }
+                };
+            } catch (error) {
+                console.error('从数据库读取金币失败:', error);
+            }
+            return 0;
+        }
+
+        // 更新金币显示
+        function updateFundsDisplay(funds) {
+            const operationFunds = document.getElementById('operation-funds');
+            if (operationFunds) {
+                operationFunds.textContent = `${funds} 金币`;
+                console.log('更新金币显示:', funds);
+            }
+
+            // 同时更新背包显示
+            updateFloatingBagDisplay();
+        }
+
+        // 扣除金币（同步到茶铺）
+        function deductFunds(amount) {
+            console.log(`扣除金币: ${amount}`);
+
+            try {
+                // 尝试多个可能的localStorage键名
+                const possibleKeys = ['teaGameData', 'cuteTeaShop_save', 'teaGameSave_1', 'gameData'];
+
+                for (const key of possibleKeys) {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed && parsed.funds !== undefined) {
+                                const oldFunds = parsed.funds || 0;
+                                parsed.funds = Math.max(0, oldFunds - amount);
+                                localStorage.setItem(key, JSON.stringify(parsed));
+                                console.log(`从${key}扣除金币: ${oldFunds} -> ${parsed.funds}`);
+
+                                // 更新稻香村显示
+                                updateFundsDisplay(parsed.funds);
+                                return;
+                            }
+                        } catch (e) {
+                            console.log(`扣除金币: ${key}数据解析失败`);
+                        }
+                    }
+                }
+
+                console.error('找不到茶铺数据，无法扣除金币');
+                showWin95Modal('扣除失败', '找不到茶铺数据，无法扣除金币', '❌');
+
+            } catch (error) {
+                console.error('扣除金币失败:', error);
+            }
+        }
+
+        // 更新修理区域
+        function updateRepairSection() {
+            const repairSection = document.getElementById('repair-section');
+            const repairList = document.getElementById('repair-list');
+
+            // 检查元素是否存在
+            if (!repairSection || !repairList) {
+                console.log('修理区域元素不存在，跳过更新');
+                return;
+            }
+
+            if (riceVillageData.player.weapon && riceVillageData.player.weapon.durability < riceVillageData.player.weapon.maxDurability) {
+                repairSection.style.display = 'block';
+                const weapon = riceVillageData.player.weapon;
+                const repairCost = Math.ceil((weapon.maxDurability - weapon.durability) * 2); // 每点耐久2金币
+
+                repairList.innerHTML = `
+                    <tr>
+                        <td>当前武器: ${weapon.name}</td>
+                        <td>耐久: ${weapon.durability}/${weapon.maxDurability}</td>
+                        <td>修理费用: ${repairCost}金币</td>
+                        <td><button class="action-btn" onclick="repairWeapon(${repairCost})">修理</button></td>
+                    </tr>
+                `;
+            } else {
+                repairSection.style.display = 'none';
+            }
+        }
+
+        // 修理武器
+        function repairWeapon(cost) {
+            const currentFunds = getCurrentFunds();
+            if (currentFunds < cost) {
+                showWin95Modal('金币不足', `修理需要${cost}金币，当前只有${currentFunds}金币。`, '💰');
+                return;
+            }
+
+            deductFunds(cost);
+            riceVillageData.player.weapon.durability = riceVillageData.player.weapon.maxDurability;
+
+            updateDisplay();
+            updateRepairSection();
+            showWin95Modal('修理完成', `${riceVillageData.player.weapon.name}已修理完成！`, '🔧');
+        }
+    </script>
+</body>
+</html>
