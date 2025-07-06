@@ -3166,7 +3166,29 @@
                     }
                     
                     if (customerStatus) {
-                        customerStatus.innerHTML = '<div class="alert alert-warning">有猫咪来访，可以用茶水喂食增加亲密度</div>';
+                        // 检查是否有茶饮和小鱼干
+                        const hasTeas = gameData.madeTeas.length > 0;
+                        const toppingsCount = gameData.toppings['小鱼干'] || 0;
+                        const materialsCount = (gameData.materials && gameData.materials['小鱼干']) || 0;
+                        const hasFish = (toppingsCount + materialsCount) > 0;
+
+                        customerStatus.innerHTML = `
+                            <div class="alert alert-warning">
+                                <div><strong>🐱 ${cat.name} 来访</strong></div>
+                                <div style="margin: 10px 0;">可以喂食增加亲密度</div>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <button class="action-btn" onclick="feedCatWithTea('${cat.name}')" ${hasTeas ? '' : 'disabled'}>
+                                        ${hasTeas ? '🍵 喂茶饮' : '🍵 无茶饮'}
+                                    </button>
+                                    <button class="action-btn" onclick="feedCatWithFish('${cat.name}')" ${hasFish ? '' : 'disabled'}>
+                                        ${hasFish ? '🐟 喂小鱼干' : '🐟 无小鱼干'}
+                                    </button>
+                                    <button class="action-btn" onclick="petCat('${cat.name}')">
+                                        🤲 撸猫
+                                    </button>
+                                </div>
+                            </div>
+                        `;
                     }
                     return;
                 } else {
@@ -3602,7 +3624,99 @@
             updateAllInventoryDisplay();
         }
 
-        // 用小鱼干喂猫
+        // 用茶饮喂食访客猫咪
+        function feedCatWithTea(catName) {
+            if (gameData.madeTeas.length === 0) {
+                showAlert('没有茶饮可以喂给猫咪！请先制作一些茶饮。', '茶饮不足', '🍵');
+                return;
+            }
+
+            // 使用第一个可用的茶饮
+            const tea = gameData.madeTeas[0];
+            feedCat(catName, tea.name);
+
+            // 猫咪离开
+            gameData.cats.currentCat = null;
+            addDebugLog(`${catName} 吃饱了，满足地离开了`);
+
+            showAlert(`用${tea.name}喂食了${catName}，亲密度增加！`, '喂食成功', '🐱');
+            updateCustomerDisplay();
+            saveGameDataToDatabase();
+        }
+
+        // 用小鱼干喂访客猫咪
+        function feedCatWithFish(catName) {
+            // 检查是否有小鱼干（检查toppings和materials两个库存）
+            const toppingsCount = gameData.toppings['小鱼干'] || 0;
+            const materialsCount = (gameData.materials && gameData.materials['小鱼干']) || 0;
+            const totalFishCount = toppingsCount + materialsCount;
+
+            if (totalFishCount <= 0) {
+                showAlert('没有小鱼干了！请打猎获得或到小料商店购买。', '物品不足', '🐟');
+                return;
+            }
+
+            // 初始化猫咪数据
+            if (!gameData.cats.intimacy[catName]) {
+                gameData.cats.intimacy[catName] = 0;
+            }
+            if (!gameData.cats.feedCount[catName]) {
+                gameData.cats.feedCount[catName] = 0;
+            }
+
+            // 增加亲密度（小鱼干效果更好）
+            gameData.cats.intimacy[catName] = Math.min(5000, gameData.cats.intimacy[catName] + 20);
+            gameData.cats.feedCount[catName]++;
+            gameData.cats.lastSeen[catName] = Date.now();
+
+            // 消耗小鱼干（优先从materials中消耗，然后从toppings中消耗）
+            if (gameData.materials && gameData.materials['小鱼干'] > 0) {
+                const beforeCount = gameData.materials['小鱼干'];
+                gameData.materials['小鱼干']--;
+                const afterCount = gameData.materials['小鱼干'];
+                addDebugLog(`消耗小鱼干(打猎): ${beforeCount} → ${afterCount} (-1)`);
+            } else if (gameData.toppings['小鱼干'] > 0) {
+                const beforeCount = gameData.toppings['小鱼干'];
+                gameData.toppings['小鱼干']--;
+                const afterCount = gameData.toppings['小鱼干'];
+                addDebugLog(`消耗小鱼干(购买): ${beforeCount} → ${afterCount} (-1)`);
+            }
+
+            addDebugLog(`用小鱼干喂食了 ${catName}，亲密度增加20！`);
+
+            // 猫咪离开
+            gameData.cats.currentCat = null;
+            addDebugLog(`${catName} 吃饱了，满足地离开了`);
+
+            showAlert(`用小鱼干喂食了${catName}，亲密度大幅增加！`, '喂食成功', '🐱');
+            updateCustomerDisplay();
+            updateAllInventoryDisplay();
+            saveGameDataToDatabase();
+        }
+
+        // 撸访客猫咪
+        function petCat(catName) {
+            // 初始化猫咪数据
+            if (!gameData.cats.intimacy[catName]) {
+                gameData.cats.intimacy[catName] = 0;
+            }
+
+            // 增加少量亲密度
+            gameData.cats.intimacy[catName] = Math.min(5000, gameData.cats.intimacy[catName] + 5);
+            gameData.cats.lastSeen[catName] = Date.now();
+
+            addDebugLog(`撸了撸 ${catName}，亲密度增加5`);
+
+            // 猫咪离开
+            gameData.cats.currentCat = null;
+            addDebugLog(`${catName} 享受了一番，满足地离开了`);
+
+            showAlert(`撸了撸${catName}，它很开心！`, '互动成功', '🐱');
+            updateCustomerDisplay();
+            saveGameDataToDatabase();
+        }
+
+        // 用小鱼干喂猫（原版函数，用于猫咪管理界面）
         function feedCatWithFish() {
             const selectedCatDiv = document.getElementById('selected-cat');
             if (!selectedCatDiv || !selectedCatDiv.innerHTML.includes('cat-name')) {
@@ -6426,6 +6540,10 @@
 
             const food = gameData.madeTeas[foodIndex];
 
+            // 先保存顾客信息（因为resetCustomer会清除）
+            const customerName = gameData.customer.name;
+            const isVIP = gameData.customer.isVIP;
+
             // 移除食品
             gameData.madeTeas.splice(foodIndex, 1);
 
@@ -6437,16 +6555,24 @@
             gameData.funds += totalEarning;
 
             // 记录顾客访问
-            recordCustomerVisit(gameData.customer.name, gameData.customer.isVIP);
+            recordCustomerVisit(customerName, isVIP);
 
-            addDebugLog(`🍽️ 服务${gameData.customer.name}：${requiredFood}，获得${totalEarning}金币（含${tip}金币小费）`);
+            addDebugLog(`🍽️ 服务${customerName}：${requiredFood}，获得${totalEarning}金币（含${tip}金币小费）`);
+
+            // 立即重置顾客状态，避免界面显示问题
+            resetCustomer();
+
+            // 立即更新显示，确保界面状态正确
+            updateAllInventoryDisplay();
+            updateAllFundsDisplay();
+            updateCustomerDisplay(); // 确保顾客状态显示正确
 
             // 显示服务成功信息
             const serviceContent = `
                 <div style="text-align: center; line-height: 1.6;">
                     <h3 style="color: #0040c0; margin: 0 0 15px 0;">🍽️ 服务成功！</h3>
                     <div style="margin-bottom: 15px; padding: 12px; background: #f0f0f0; border: 1px inset #c0c0c0;">
-                        <div style="font-weight: bold; color: #d2691e; margin-bottom: 8px;">顾客：${gameData.customer.name}</div>
+                        <div style="font-weight: bold; color: #d2691e; margin-bottom: 8px;">顾客：${customerName}</div>
                         <div style="color: #666; margin-bottom: 8px;">订单：${requiredFood}</div>
                         <div style="color: #22c55e; font-weight: bold;">收入：${basePrice}金币 + ${tip}金币小费 = ${totalEarning}金币</div>
                     </div>
@@ -6455,12 +6581,6 @@
 
             showWin95Modal('服务完成', serviceContent, '🍽️');
 
-            // 重置顾客状态
-            resetCustomer();
-
-            // 更新显示
-            updateAllInventoryDisplay();
-            updateAllFundsDisplay();
             saveGameDataToDatabase();
         }
 
