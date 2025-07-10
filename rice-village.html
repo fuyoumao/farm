@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>稻香村 - 统一版本</title>
+    <link rel="stylesheet" href="unified-styles.css?v=2.3">
+</head>
+<body>
+    <div class="container">
+        <!-- 页面标题 -->
+        <div class="header">
+            <h1>稻香村 - RPG冒险模式</h1>
+            <div class="subtitle">统一版本 v2.0 | 数据完全同步</div>
+        </div>
+
+        <!-- 导航栏 -->
+        <div class="nav-bar">
+            <button class="nav-btn" onclick="goToTeaShop()">返回茶铺</button>
+            <button class="nav-btn" onclick="showInventory()" style="background: #666; color: white;">背包</button>
+            <button class="nav-btn" onclick="showPartnerSelection()" style="background: #666; color: white;">选择伙伴</button>
+            <!-- 核心调试功能 - 按照重建指导文档保留 -->
+            <button class="nav-btn" onclick="debugNPCStatus()" style="background: #666; color: white;">NPC状态</button>
+            <button class="nav-btn" onclick="debugCurrentQuests()" style="background: #666; color: white;">当前任务</button>
+            <button class="nav-btn" onclick="resetKillData()" style="background: #666; color: white;">重置击杀</button>
+            <button class="nav-btn" onclick="resetAllGameData()" style="background: #d32f2f; color: white;">完全重置</button>
+        </div>
+
+        <!-- 天气时间信息栏 -->
+        <div class="weather-info-bar" style="background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: center; align-items: center; gap: 20px;">
+            <div class="weather-display" style="display: flex; align-items: center; gap: 8px;">
+                <span id="rice-weather-icon" style="font-size: 20px;">☀️</span>
+                <span id="rice-season-text" style="font-weight: 600; color: #333;">春天 · 晴天</span>
+            </div>
+            <div class="day-display" style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: #666;">第</span>
+                <span id="rice-day-number" style="font-weight: 600; color: #333;">1</span>
+                <span style="color: #666;">天</span>
+            </div>
+        </div>
+
+        <!-- 角色状态栏 -->
+        <div class="section">
+            <div class="section-title">角色状态</div>
+            <table class="status-table">
+                <tr>
+                    <th>姓名</th>
+                    <th>性别</th>
+                    <th>等级</th>
+                    <th>经验</th>
+                    <th>血量</th>
+                    <th>体力</th>
+                    <th>攻击力</th>
+                    <th>金币</th>
+                </tr>
+                <tr>
+                    <td id="player-name">未设置</td>
+                    <td id="player-gender">未设置</td>
+                    <td id="player-level">1级</td>
+                    <td id="player-exp">0/100</td>
+                    <td id="player-hp">100/100</td>
+                    <td id="player-stamina">100/100</td>
+                    <td id="player-power">5</td>
+                    <td id="player-funds">1000 🪙</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 猫咪伙伴状态 -->
+        <div class="section">
+            <div class="section-title">猫咪伙伴</div>
+            <table class="status-table">
+                <tr>
+                    <th>当前伙伴</th>
+                    <th>类型</th>
+                    <th>等级</th>
+                    <th>血量</th>
+                    <th>攻击力</th>
+                    <th>操作</th>
+                </tr>
+                <tr>
+                    <td id="cat-name">未选择伙伴</td>
+                    <td id="cat-type">-</td>
+                    <td id="cat-level">-</td>
+                    <td id="cat-hp">-</td>
+                    <td id="cat-power">-</td>
+                    <td>
+                        <!-- 旧按钮已删除 - 使用导航栏的伙伴选择按钮 -->
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 快速测试按钮已删除 - 按照重建指导文档清理旧系统 -->
+
+        <!-- NPC对话区 -->
+        <div class="section">
+            <div class="section-title">村民NPC</div>
+            <table class="main-table">
+                <thead>
+                    <tr>
+                        <th>NPC名称</th>
+                        <th>职业</th>
+                        <th>任务状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="npcs-table">
+                    <!-- 动态生成NPC状态 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 战斗区域 -->
+        <div class="section">
+            <div class="section-title">野生动物</div>
+            <table class="main-table">
+                <thead>
+                    <tr>
+                        <th>怪物名称</th>
+                        <th>描述</th>
+                        <th>掉落物品</th>
+                        <th>当前血量</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="monsters-table">
+                    <!-- 动态生成怪物状态 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 采集区域 -->
+        <div class="section">
+            <div class="section-title">植物采集</div>
+            <table class="main-table">
+                <thead>
+                    <tr>
+                        <th>植物名称</th>
+                        <th>描述</th>
+                        <th>用途</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="plants-table">
+                    <!-- 动态生成植物状态 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 装备管理 -->
+        <div class="section">
+            <div class="section-title">装备管理</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <!-- 当前装备 -->
+                <div>
+                    <h4 style="font-size: 12px; margin-bottom: 8px;">当前装备</h4>
+                    <table class="inventory-table">
+                        <thead>
+                            <tr><th>部位</th><th>装备名称</th><th>属性</th><th>操作</th></tr>
+                        </thead>
+                        <tbody id="equipped-items">
+                            <!-- 动态生成当前装备 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 背包装备 -->
+                <div>
+                    <h4 style="font-size: 12px; margin-bottom: 8px;">背包装备</h4>
+                    <table class="inventory-table">
+                        <thead>
+                            <tr><th>装备名称</th><th>类型</th><th>属性</th><th>操作</th></tr>
+                        </thead>
+                        <tbody id="inventory-equipment">
+                            <!-- 动态生成背包装备 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 武器铺已删除 - 按照重建指导文档清理旧系统 -->
+
+        <!-- 背包快速查看已删除 - 按照重建指导文档，背包应为弹出窗体 -->
+    </div>
+
+    <!-- 悬浮任务面板 -->
+    <div class="floating-panel" id="quest-panel">
+        <h3>当前任务</h3>
+        <div id="active-quests">
+            <div style="color: #6b7280; font-size: 11px;">暂无进行中的任务</div>
+        </div>
+    </div>
+
+
+
+    <!-- 模态框容器 -->
+    <div id="modal-container"></div>
+
+    <!-- 独立的测试按钮 - 悬浮在右下角 -->
+    <div style="
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        background: #FFA500;
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        border: none;
+        user-select: none;
+    " onclick="testCompleteAllQuests()" title="快速完成所有任务，设置玩家为11级">
+        🧪 完成所有任务
+    </div>
+
+    <!-- 旧悬浮背包已删除 - 按照重建指导文档使用独立背包系统 -->
+
+    <!-- 武器铺窗口已删除 - 按照重建指导文档清理旧系统 -->
+
+    <!-- 对话窗体 -->
+    <div id="dialog-window" class="dialog-window">
+        <div class="dialog-header">💬 对话</div>
+        <div id="dialog-content" class="dialog-content"></div>
+        <div id="dialog-options" class="dialog-options"></div>
+    </div>
+
+    <!-- JavaScript文件 - 按照重建文档要求的正确加载顺序 -->
+    <script src="unified-core-system.js"></script>
+    <script src="unified-inventory-system.js"></script>
+    <script src="unified-weather-system.js"></script>
+    <script src="rice-village-manager.js"></script>
+    <script>
+        // 确保系统按正确顺序初始化
+        function initializeRiceVillageSystem() {
+            console.log('🏮 开始初始化稻香村系统...');
+            
+            // 第一步：确保核心系统存在并已初始化
+            if (!window.core || !window.core.initialized) {
+                console.error('❌ 核心系统未就绪');
+                console.log('核心系统存在:', !!window.core);
+                console.log('核心系统已初始化:', window.core ? window.core.initialized : 'N/A');
+                return false;
+            }
+            
+            console.log('✅ 核心系统已就绪');
+            
+            // 第二步：创建并初始化稻香村管理器
+            if (!window.riceVillageManager) {
+                try {
+                    console.log('🏗️ 创建稻香村管理器...');
+                    window.riceVillageManager = new RiceVillageManager(window.core);
+                    
+                    console.log('🚀 初始化稻香村管理器...');
+                    const success = window.riceVillageManager.initialize();
+                    
+                    if (success) {
+                        console.log('✅ 稻香村系统初始化成功！');
+                        console.log('🎯 现在可以使用任务诊断功能：fullTaskDiagnosis()');
+                        return true;
+                    } else {
+                        console.error('❌ 稻香村管理器初始化失败');
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('❌ 创建稻香村管理器失败:', error);
+                    return false;
+                }
+            } else {
+                console.log('✅ 稻香村管理器已存在');
+                return true;
+            }
+        }
+        
+        // 页面加载完成后按顺序初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🏮 稻香村页面DOM加载完成');
+            
+            // 使用更可靠的初始化时机
+            if (window.core && window.core.initialized) {
+                // 核心系统已就绪，立即初始化
+                initializeRiceVillageSystem();
+            } else {
+                // 核心系统未就绪，等待一段时间后重试
+                let retryCount = 0;
+                const maxRetries = 10;
+                
+                const retryInit = () => {
+                    retryCount++;
+                    console.log(`🔄 第${retryCount}次尝试初始化稻香村系统...`);
+                    
+                    if (initializeRiceVillageSystem()) {
+                        console.log('🎉 稻香村系统初始化成功！');
+                        return;
+                    }
+                    
+                    if (retryCount < maxRetries) {
+                        setTimeout(retryInit, 200);
+                    } else {
+                        console.error('❌ 稻香村系统初始化失败，已达到最大重试次数');
+                        console.log('💡 请手动刷新页面重试');
+                    }
+                };
+                
+                setTimeout(retryInit, 100);
+            }
+        });
+    </script>
+
+    <script>
+        // 伙伴选择相关全局函数
+        function showCompanionSelector() {
+            // 调用正确的伙伴选择函数
+            showPartnerSelection();
+        }
+
+        function selectCompanionAndClose(originalName) {
+            // 这个函数暂时不需要，伙伴选择通过模态窗口处理
+            console.log('选择伙伴:', originalName);
+        }
+
+        function closeCompanionSelector() {
+            const modals = document.querySelectorAll('div[style*="position: fixed"]');
+            modals.forEach(modal => {
+                if (modal.innerHTML.includes('选择猫咪伙伴')) {
+                    modal.remove();
+                }
+            });
+        }
+
+        // 返回茶铺函数
+        function goToTeaShop() {
+            // 保存当前数据
+            if (window.riceVillageManager && window.riceVillageManager.core) {
+                window.riceVillageManager.core.saveGameData();
+            }
+
+            // 跳转到茶铺
+            window.location.href = 'index.html';
+        }
+
+
+
+        // 调试任务系统
+        function debugQuests() {
+            if (!window.riceVillageManager || !window.riceVillageManager.core.initialized) {
+                showSimpleAlert('错误：稻香村管理器未初始化！');
+                return;
+            }
+
+            const quests = window.riceVillageManager.core.gameData.quests;
+            const killCounts = window.riceVillageManager.core.gameData.riceVillage.killCounts;
+
+            console.log('🔍 === 任务系统调试信息 ===');
+            console.log('活跃任务:', quests.active);
+            console.log('已完成任务:', quests.completed);
+            console.log('击杀统计:', killCounts);
+
+            let debugInfo = '🔍 任务系统调试信息:\\n\\n';
+            debugInfo += `活跃任务数量: ${quests.active.length}\\n`;
+            debugInfo += `已完成任务数量: ${quests.completed.length}\\n`;
+            debugInfo += `野猪击杀数: ${killCounts['野猪'] || 0}\\n\\n`;
+
+            if (quests.active.length > 0) {
+                debugInfo += '活跃任务详情:\\n';
+                quests.active.forEach(quest => {
+                    debugInfo += `- ${quest.name}: ${quest.progress}/${quest.required} (${quest.status})\\n`;
+                });
+            }
+
+            showSimpleAlert(debugInfo);
+        }
+
+        // 测试：完成所有任务（保留刘洋最后一个任务）
+        function testCompleteAllQuests() {
+            if (!window.riceVillageManager || !window.riceVillageManager.core.initialized) {
+                console.error('❌ 稻香村管理器未初始化');
+                showSimpleAlert('错误：稻香村管理器未初始化！');
+                return;
+            }
+
+            console.log('🧪 开始测试：完成所有任务');
+            
+            const core = window.riceVillageManager.core;
+            const gameData = core.gameData;
+            
+            // 调试：显示当前玩家状态
+            console.log('🔍 当前玩家状态:', {
+                level: gameData.player.level,
+                exp: gameData.player.exp,
+                gold: gameData.player.gold,
+                name: gameData.player.name
+            });
+            
+            // 清空当前活跃任务
+            gameData.quests.active = [];
+            gameData.quests.completed = gameData.quests.completed || [];
+            gameData.quests.progress = {};
+            
+            // 设置刘洋的questStage到9，这样他会给出最后一个找车夫的任务
+            const liuYangNPC = gameData.riceVillage.npcs['刘洋'];
+            if (liuYangNPC) {
+                liuYangNPC.questStage = 9;
+                console.log('📈 设置刘洋questStage到9');
+            } else {
+                console.error('❌ 未找到刘洋NPC');
+            }
+            
+            // 设置王婆婆为完全完成状态
+            const wangPoPoNPC = gameData.riceVillage.npcs['王婆婆'];
+            if (wangPoPoNPC) {
+                wangPoPoNPC.questStage = 7;
+                console.log('📈 设置王婆婆questStage到7');
+            } else {
+                console.error('❌ 未找到王婆婆NPC');
+            }
+            
+            // 给玩家相关奖励物品
+            if (core.inventorySystem) {
+                // 王婆婆任务完成奖励：精致令牌
+                core.inventorySystem.addItem('精致令牌', 1);
+                console.log('📦 添加精致令牌');
+                
+                // 确保equipment数组存在
+                if (!gameData.inventory.equipment) {
+                    gameData.inventory.equipment = [];
+                }
+                
+                // 添加村长佩剑
+                const villageChiefSword = {
+                    id: 'village_chief_sword_' + Date.now(),
+                    name: '村长佩剑',
+                    type: 'weapon',
+                    attack: 8,
+                    equipped: false
+                };
+                gameData.inventory.equipment.push(villageChiefSword);
+                
+                // 添加董虎战刀
+                const donghuSaber = {
+                    id: 'donghu_saber_' + Date.now(),
+                    name: '董虎战刀',
+                    type: 'weapon',
+                    attack: 12,
+                    equipped: false
+                };
+                gameData.inventory.equipment.push(donghuSaber);
+                
+                console.log('⚔️ 添加武器装备');
+            } else {
+                console.error('❌ 统一背包系统未初始化');
+            }
+            
+            // 设置角色等级到11级 - 加强调试
+            const oldLevel = gameData.player.level;
+            const oldExp = gameData.player.exp;
+            const oldGold = gameData.player.gold;
+            
+            gameData.player.level = 11;
+            gameData.player.exp = 1200;
+            gameData.player.gold = (gameData.player.gold || 0) + 500;
+            
+            console.log('📊 等级设置详情:', {
+                '原等级': oldLevel,
+                '新等级': gameData.player.level,
+                '原经验': oldExp,
+                '新经验': gameData.player.exp,
+                '原金币': oldGold,
+                '新金币': gameData.player.gold
+            });
+            
+            // 模拟完成的任务（添加到completed列表）
+            const completedQuests = [
+                // 刘洋的前9个任务
+                { id: 'clear_boars', name: '清理野猪威胁', npc: '刘洋', status: 'completed' },
+                { id: 'collect_food', name: '收集村民口粮', npc: '刘洋', status: 'completed' },
+                { id: 'patrol_supply', name: '为巡逻队提供补给', npc: '刘洋', status: 'completed' },
+                { id: 'defense_materials', name: '收集防御材料', npc: '刘洋', status: 'completed' },
+                { id: 'defend_village', name: '保卫村庄', npc: '刘洋', status: 'completed' },
+                { id: 'medical_supplies', name: '收集村民生活用品', npc: '刘洋', status: 'completed' },
+                { id: 'healing_tea', name: '制作村民药茶', npc: '刘洋', status: 'completed' },
+                { id: 'final_defense', name: '村庄最终防务', npc: '刘洋', status: 'completed' },
+                { id: 'defeat_donghu', name: '击败山贼头目董虎', npc: '刘洋', status: 'completed' },
+                
+                // 王婆婆的所有任务
+                { id: 'deliver_mantou', name: '为王婆婆送馒头', npc: '王婆婆', status: 'completed' },
+                { id: 'collect_zhixuecao', name: '采集止血草', npc: '王婆婆', status: 'completed' },
+                { id: 'kill_guozili', name: '击败果子狸', npc: '王婆婆', status: 'completed' },
+                { id: 'kill_houzi', name: '击败猴子', npc: '王婆婆', status: 'completed' },
+                { id: 'kill_shanzei_final', name: '击败山贼', npc: '王婆婆', status: 'completed' }
+            ];
+            
+            gameData.quests.completed.push(...completedQuests);
+            console.log('📋 添加已完成任务记录');
+            
+            // 保存数据
+            core.saveGameData();
+            console.log('💾 数据已保存');
+            
+            // 强制刷新所有界面显示
+            if (window.riceVillageManager.updatePlayerStatus) {
+                window.riceVillageManager.updatePlayerStatus();
+                console.log('🔄 已刷新玩家状态显示');
+            }
+            
+            if (window.riceVillageManager.updateQuestDisplay) {
+                window.riceVillageManager.updateQuestDisplay();
+                console.log('🔄 已刷新任务显示');
+            }
+            
+            if (window.riceVillageManager.renderNPCsTable) {
+                window.riceVillageManager.renderNPCsTable();
+                console.log('🔄 已刷新NPC显示');
+            }
+            
+            // 最终验证
+            console.log('🔍 设置后玩家状态:', {
+                level: gameData.player.level,
+                exp: gameData.player.exp,
+                gold: gameData.player.gold,
+                刘洋QuestStage: liuYangNPC ? liuYangNPC.questStage : 'NPC不存在',
+                王婆婆QuestStage: wangPoPoNPC ? wangPoPoNPC.questStage : 'NPC不存在'
+            });
+            
+            console.log('✅ 测试完成！');
+            
+            // 使用可靠的弹窗显示结果
+            setTimeout(function() {
+                try {
+                    showSimpleAlert('🧪 测试完成！\\n\\n设置完成：\\n• 刘洋questStage: 9\\n• 王婆婆questStage: 7\\n• 玩家等级: 11级\\n• 添加了精致令牌和武器\\n\\n请检查控制台查看详细信息，现在可以找刘洋对话！');
+                } catch (e) {
+                    // 如果showSimpleAlert失败，使用原生alert
+                    alert('🧪 测试完成！\\n\\n设置完成：\\n• 刘洋questStage: 9\\n• 王婆婆questStage: 7\\n• 玩家等级: 11级\\n• 添加了精致令牌和武器\\n\\n请检查控制台查看详细信息，现在可以找刘洋对话！');
+                }
+            }, 100);
+        }
+
+        // 显示测试结果模态弹窗（确保正确居中显示）
+        function showTestResultModal(title, content, color = '#4CAF50') {
+            // 移除已存在的测试结果弹窗
+            const existingModal = document.getElementById('test-result-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // 创建模态弹窗 - 使用更强制的定位方式
+            const modal = document.createElement('div');
+            modal.id = 'test-result-modal';
+            
+            // 获取视窗尺寸
+            const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+            
+            // 强制设置为绝对定位到视窗
+            modal.style.position = 'fixed';
+            modal.style.top = '0px';
+            modal.style.left = '0px';
+            modal.style.width = viewportWidth + 'px';
+            modal.style.height = viewportHeight + 'px';
+            modal.style.margin = '0';
+            modal.style.padding = '0';
+            modal.style.background = 'rgba(0, 0, 0, 0.5)';
+            modal.style.zIndex = '99999';
+            modal.style.display = 'table';
+            modal.style.tableLayout = 'fixed';
+
+            const centerCell = document.createElement('div');
+            centerCell.style.display = 'table-cell';
+            centerCell.style.verticalAlign = 'middle';
+            centerCell.style.textAlign = 'center';
+            centerCell.style.padding = '20px';
+
+            const panel = document.createElement('div');
+            panel.style.cssText = `
+                background: #ffffff;
+                border: 2px outset #c0c0c0;
+                box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+                width: 400px;
+                max-width: 90%;
+                max-height: 70vh;
+                overflow-y: auto;
+                font-family: 'MS Sans Serif', sans-serif;
+                font-size: 12px;
+                border-radius: 0;
+                margin: 0 auto;
+                display: inline-block;
+                text-align: left;
+            `;
+
+            const header = document.createElement('div');
+            header.style.cssText = `
+                background: ${color};
+                color: white;
+                padding: 8px 12px;
+                font-weight: bold;
+                font-size: 13px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            `;
+            header.innerHTML = `
+                <span>${title}</span>
+                <button onclick="closeTestResultModal()" style="
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 18px;
+                    cursor: pointer;
+                    padding: 0;
+                    width: 24px;
+                    height: 24px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                ">×</button>
+            `;
+
+            const body = document.createElement('div');
+            body.style.cssText = `
+                padding: 20px;
+                line-height: 1.6;
+                color: #333;
+                white-space: pre-line;
+                font-size: 13px;
+                max-height: 300px;
+                overflow-y: auto;
+            `;
+            body.textContent = content;
+
+            const footer = document.createElement('div');
+            footer.style.cssText = `
+                padding: 12px 20px;
+                text-align: center;
+                border-top: 1px solid #e0e0e0;
+                background: #f9f9f9;
+            `;
+            footer.innerHTML = `
+                <button onclick="closeTestResultModal()" style="
+                    background: ${color};
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    font-size: 12px;
+                    cursor: pointer;
+                    border-radius: 3px;
+                ">确定</button>
+            `;
+
+            panel.appendChild(header);
+            panel.appendChild(body);
+            panel.appendChild(footer);
+            centerCell.appendChild(panel);
+            modal.appendChild(centerCell);
+
+            // 直接添加到body最前面
+            document.body.insertBefore(modal, document.body.firstChild);
+
+            // 防止页面滚动和其他交互
+            document.body.style.overflow = 'hidden';
+            
+            // 防止点击模态背景关闭
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal || e.target === centerCell) {
+                    closeTestResultModal();
+                }
+            });
+
+            // 调试信息
+            console.log('模态弹窗已创建:', {
+                viewportWidth: viewportWidth,
+                viewportHeight: viewportHeight,
+                modalElement: modal
+            });
+        }
+
+        // 关闭测试结果模态弹窗
+        function closeTestResultModal() {
+            const modal = document.getElementById('test-result-modal');
+            if (modal) {
+                modal.remove();
+                document.body.style.overflow = '';
+            }
+        }
+
+        // 简单可靠的弹窗函数
+        function showSimpleAlert(message) {
+            // 移除已存在的简单弹窗
+            const existingAlert = document.getElementById('simple-alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            // 创建简单弹窗
+            const alertDiv = document.createElement('div');
+            alertDiv.id = 'simple-alert';
+            alertDiv.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0,0,0,0.7);
+                    z-index: 999999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: Arial, sans-serif;
+                ">
+                    <div style="
+                        background: white;
+                        padding: 20px;
+                        border-radius: 8px;
+                        max-width: 400px;
+                        width: 90%;
+                        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                        text-align: center;
+                        word-wrap: break-word;
+                    ">
+                        <div style="
+                            margin-bottom: 20px;
+                            line-height: 1.6;
+                            color: #333;
+                            white-space: pre-line;
+                            font-size: 14px;
+                        ">${message}</div>
+                        <button onclick="closeSimpleAlert()" style="
+                            background: #4CAF50;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 14px;
+                        ">确定</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            document.body.style.overflow = 'hidden';
+            
+            console.log('简单弹窗已显示');
+        }
+
+        // 关闭简单弹窗
+        function closeSimpleAlert() {
+            const alertDiv = document.getElementById('simple-alert');
+            if (alertDiv) {
+                alertDiv.remove();
+                document.body.style.overflow = '';
+                console.log('简单弹窗已关闭');
+            }
+        }
+    </script>
+</body>
+</html>
