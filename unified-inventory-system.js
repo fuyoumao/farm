@@ -52,7 +52,10 @@ class UnifiedInventorySystem {
                 '黄芪': { price: 3, growTime: 55000, category: 'advanced' },
                 
                 // 特殊种子
-                '米': { price: 1, growTime: 40000, category: 'special' }
+                '米': { price: 1, growTime: 40000, category: 'special' },
+
+                // 地图奖励新增种子（稻香村）
+                '黄米': { price: 2, growTime: 45000, category: 'riceVillageReward' }
             },
             
             // 肉类原料
@@ -78,9 +81,17 @@ class UnifiedInventorySystem {
                 '干桂花': { price: 2, processingTime: 10000, source: '桂花', output: 3 },
                 '小圆子': { price: 3, processingTime: 15000, source: '糯米', output: 3 },
                 '酒酿': { price: 3, processingTime: 18000, source: '米', output: 3 },
+
+                // 地图奖励新增加工原料（稻香村）
+                '黄米面': { price: 3, processingTime: 15000, source: '黄米', output: 3 },
                 '蜂蜜': { price: 3, buyOnly: true },
                 '冰糖': { price: 3, buyOnly: true },
-                '乌龙茶包': { price: 4, buyOnly: true }
+                '乌龙茶包': { price: 4, buyOnly: true },
+
+                // 地图奖励新增商店原料（稻香村）
+                '白芝麻': { price: 4, buyOnly: true },
+                '芝麻酱': { price: 6, buyOnly: true },
+                '胡椒粉': { price: 5, buyOnly: true }
             },
             
             // 任务物品

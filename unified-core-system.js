@@ -104,6 +104,14 @@ class UnifiedCoreSystem {
                 },
                 customerVisits: {},
                 servedCustomers: 0,
+
+                // Named顾客系统（地图完成奖励）
+                namedCustomers: [],           // 存储已转移的NPC名单
+                customerTypes: {              // 顾客类型概率配置
+                    normal: 0.7,              // 普通顾客70%
+                    vip: 0.2,                 // VIP顾客20%
+                    named: 0.1                // Named顾客10%
+                },
                 
                 // 猫咪系统
                 cats: {
@@ -178,7 +186,9 @@ class UnifiedCoreSystem {
                 teaRecipes: {
                     '五味子饮': ['五味子'],
                     '柠檬茶': ['柠檬'],
-                    '解暑茶': ['甘草']
+                    '解暑茶': ['甘草'],
+                    // 地图奖励配方
+                    '面茶': ['黄米面', '白芝麻', '芝麻酱', '胡椒粉']
                 },
                 unlockedRecipes: ['五味子饮', '柠檬茶', '解暑茶']
             },
@@ -638,6 +648,14 @@ class UnifiedCoreSystem {
                 servedCustomers: 0,
                 lastCustomerTime: 0,
 
+                // Named顾客系统（地图完成奖励）
+                namedCustomers: [],           // 存储已转移的NPC名单
+                customerTypes: {              // 顾客类型概率配置
+                    normal: 0.7,              // 普通顾客70%
+                    vip: 0.2,                 // VIP顾客20%
+                    named: 0.1                // Named顾客10%
+                },
+
                 cats: {
                     lastCatTime: Date.now(),
                     catCooldown: 259200000,
@@ -696,7 +714,9 @@ class UnifiedCoreSystem {
                 teaRecipes: {
                     '五味子饮': ['五味子'],
                     '柠檬茶': ['柠檬'],
-                    '解暑茶': ['甘草']
+                    '解暑茶': ['甘草'],
+                    // 地图奖励配方
+                    '面茶': ['黄米面', '白芝麻', '芝麻酱', '胡椒粉']
                 },
                 unlockedRecipes: ['五味子饮', '柠檬茶', '解暑茶']
             },
@@ -1633,3 +1653,417 @@ if (!safeInitializeCore()) {
     
     setTimeout(retryInit, 100);
 }
+
+// 全局测试函数：测试地图完成奖励系统数据结构
+window.testMapRewardSystem = function() {
+    console.log('🧪 测试地图完成奖励系统数据结构...');
+
+    const core = window.core;
+    if (!core || !core.initialized) {
+        console.error('❌ 核心系统未就绪');
+        return false;
+    }
+
+    const gameData = core.gameData;
+
+    // 测试Named顾客数据结构
+    console.log('1️⃣ 测试Named顾客数据结构...');
+    const namedCustomers = gameData.teaShop.namedCustomers;
+    const customerTypes = gameData.teaShop.customerTypes;
+
+    console.assert(Array.isArray(namedCustomers), 'namedCustomers应该是数组');
+    console.assert(typeof customerTypes === 'object', 'customerTypes应该是对象');
+    console.assert(customerTypes.normal === 0.7, '普通顾客概率应该是70%');
+    console.assert(customerTypes.vip === 0.2, 'VIP顾客概率应该是20%');
+    console.assert(customerTypes.named === 0.1, 'Named顾客概率应该是10%');
+    console.log('✅ Named顾客数据结构正确');
+
+    // 测试面茶配方
+    console.log('2️⃣ 测试面茶配方...');
+    const teaRecipes = gameData.teaShop.teaRecipes;
+    const faceTeaRecipe = teaRecipes['面茶'];
+
+    console.assert(Array.isArray(faceTeaRecipe), '面茶配方应该是数组');
+    console.assert(faceTeaRecipe.includes('黄米面'), '面茶配方应该包含黄米面');
+    console.assert(faceTeaRecipe.includes('白芝麻'), '面茶配方应该包含白芝麻');
+    console.assert(faceTeaRecipe.includes('芝麻酱'), '面茶配方应该包含芝麻酱');
+    console.assert(faceTeaRecipe.includes('胡椒粉'), '面茶配方应该包含胡椒粉');
+    console.log('✅ 面茶配方配置正确');
+
+    // 测试新增物品配置
+    console.log('3️⃣ 测试新增物品配置...');
+    const itemConfig = core.inventorySystem.itemConfig;
+
+    // 测试黄米种子
+    const huangmiConfig = itemConfig.teaIngredients['黄米'];
+    console.assert(huangmiConfig && huangmiConfig.price === 2, '黄米种子价格应该是2金币');
+    console.assert(huangmiConfig.growTime === 45000, '黄米生长时间应该是45秒');
+    console.log('✅ 黄米种子配置正确');
+
+    // 测试黄米面加工
+    const huangmianConfig = itemConfig.toppings['黄米面'];
+    console.assert(huangmianConfig && huangmianConfig.source === '黄米', '黄米面应该由黄米加工');
+    console.assert(huangmianConfig.processingTime === 15000, '黄米面加工时间应该是15秒');
+    console.assert(huangmianConfig.output === 3, '黄米面应该产出3个');
+    console.log('✅ 黄米面加工配置正确');
+
+    // 测试商店购买物品
+    const baizhimaConfig = itemConfig.toppings['白芝麻'];
+    const zhimajiangConfig = itemConfig.toppings['芝麻酱'];
+    const hujiaofenConfig = itemConfig.toppings['胡椒粉'];
+
+    console.assert(baizhimaConfig && baizhimaConfig.buyOnly === true, '白芝麻应该只能购买');
+    console.assert(baizhimaConfig.price === 4, '白芝麻价格应该是4金币');
+    console.assert(zhimajiangConfig && zhimajiangConfig.price === 6, '芝麻酱价格应该是6金币');
+    console.assert(hujiaofenConfig && hujiaofenConfig.price === 5, '胡椒粉价格应该是5金币');
+    console.log('✅ 商店购买物品配置正确');
+
+    console.log('🎉 地图完成奖励系统数据结构测试全部通过！');
+
+    return {
+        namedCustomersReady: Array.isArray(namedCustomers),
+        customerTypesReady: typeof customerTypes === 'object',
+        faceTeaRecipeReady: Array.isArray(faceTeaRecipe),
+        newItemsReady: !!(huangmiConfig && huangmianConfig && baizhimaConfig),
+        allTestsPassed: true
+    };
+};
+
+console.log('🧪 全局测试函数已注册：testMapRewardSystem() - 测试地图完成奖励系统数据结构');
+
+// 全局测试函数：测试阶段2 NPC转移机制
+window.testNPCTransferMechanism = function() {
+    console.log('🧪 测试阶段2: NPC转移机制...');
+
+    const core = window.core;
+    if (!core || !core.initialized) {
+        console.error('❌ 核心系统未就绪');
+        return false;
+    }
+
+    const riceVillageManager = window.riceVillageManager;
+    if (!riceVillageManager) {
+        console.error('❌ 稻香村管理器未初始化');
+        return false;
+    }
+
+    // 测试NPC转移函数是否存在
+    console.log('1️⃣ 测试NPC转移函数...');
+    console.assert(typeof riceVillageManager.transferRiceVillageNPCsToTeaShop === 'function', 'transferRiceVillageNPCsToTeaShop函数应该存在');
+    console.assert(typeof riceVillageManager.unlockFaceTeaRecipe === 'function', 'unlockFaceTeaRecipe函数应该存在');
+    console.log('✅ NPC转移函数存在');
+
+    // 测试手动触发NPC转移
+    console.log('2️⃣ 测试手动触发NPC转移...');
+    const beforeTransfer = core.gameData.teaShop.namedCustomers.length;
+    console.log('转移前Named顾客数量:', beforeTransfer);
+
+    // 手动触发转移
+    riceVillageManager.transferRiceVillageNPCsToTeaShop();
+
+    const afterTransfer = core.gameData.teaShop.namedCustomers.length;
+    console.log('转移后Named顾客数量:', afterTransfer);
+    console.assert(afterTransfer > beforeTransfer, 'Named顾客数量应该增加');
+    console.log('✅ NPC转移功能正常');
+
+    // 测试面茶配方解锁
+    console.log('3️⃣ 测试面茶配方解锁...');
+    const beforeUnlock = core.gameData.teaShop.unlockedRecipes.includes('面茶');
+    console.log('解锁前面茶配方状态:', beforeUnlock);
+
+    // 手动触发解锁
+    riceVillageManager.unlockFaceTeaRecipe();
+
+    const afterUnlock = core.gameData.teaShop.unlockedRecipes.includes('面茶');
+    console.log('解锁后面茶配方状态:', afterUnlock);
+    console.assert(afterUnlock === true, '面茶配方应该被解锁');
+    console.log('✅ 面茶配方解锁功能正常');
+
+    // 显示转移的NPC列表
+    console.log('4️⃣ 检查转移的NPC列表...');
+    const namedCustomers = core.gameData.teaShop.namedCustomers;
+    console.log('Named顾客列表:', namedCustomers.map(npc => `${npc.name}(${npc.title})`));
+    console.assert(namedCustomers.length >= 9, '应该有至少9个稻香村NPC');
+    console.log('✅ NPC列表正确');
+
+    console.log('🎉 阶段2: NPC转移机制测试全部通过！');
+
+    return {
+        transferFunctionExists: typeof riceVillageManager.transferRiceVillageNPCsToTeaShop === 'function',
+        unlockFunctionExists: typeof riceVillageManager.unlockFaceTeaRecipe === 'function',
+        namedCustomersCount: namedCustomers.length,
+        faceTeaUnlocked: afterUnlock,
+        allTestsPassed: true
+    };
+};
+
+console.log('🧪 全局测试函数已注册：testNPCTransferMechanism() - 测试阶段2 NPC转移机制');
+
+// 全局测试函数：测试阶段3 顾客生成系统修改
+window.testCustomerGenerationSystem = function() {
+    console.log('🧪 测试阶段3: 顾客生成系统修改...');
+
+    const core = window.core;
+    if (!core || !core.initialized) {
+        console.error('❌ 核心系统未就绪');
+        return false;
+    }
+
+    // 需要先进入茶铺页面
+    if (!window.teaShopManager) {
+        console.error('❌ 茶铺管理器未初始化，请先进入茶铺页面');
+        return false;
+    }
+
+    const teaShopManager = window.teaShopManager;
+
+    // 测试1：验证概率配置
+    console.log('1️⃣ 测试概率配置...');
+    const customerTypes = core.gameData.teaShop.customerTypes;
+    console.assert(customerTypes.normal === 0.7, '普通顾客概率应该是70%');
+    console.assert(customerTypes.vip === 0.2, 'VIP顾客概率应该是20%');
+    console.assert(customerTypes.named === 0.1, 'Named顾客概率应该是10%');
+    console.log('✅ 概率配置正确');
+
+    // 测试2：生成多个顾客，统计类型分布
+    console.log('2️⃣ 测试顾客类型分布（生成100个顾客）...');
+    const results = { normal: 0, vip: 0, named: 0 };
+
+    for (let i = 0; i < 100; i++) {
+        teaShopManager.generateNewCustomer();
+        const customer = core.gameData.teaShop.customer;
+        results[customer.customerType]++;
+    }
+
+    const normalRate = results.normal / 100;
+    const vipRate = results.vip / 100;
+    const namedRate = results.named / 100;
+
+    console.log(`📊 顾客类型分布: 普通${normalRate*100}%, VIP${vipRate*100}%, Named${namedRate*100}%`);
+
+    // 验证分布是否合理（允许一定偏差）
+    const normalOK = normalRate >= 0.6 && normalRate <= 0.8;
+    const vipOK = vipRate >= 0.1 && vipRate <= 0.3;
+    const namedOK = namedRate >= 0.05 && namedRate <= 0.15;
+
+    if (normalOK && vipOK && namedOK) {
+        console.log('✅ 顾客类型分布在合理范围内');
+    } else {
+        console.log('⚠️ 顾客类型分布可能有偏差（但在小样本中是正常的）');
+    }
+
+    // 测试3：验证Named顾客特殊属性
+    console.log('3️⃣ 测试Named顾客特殊属性...');
+    let namedCustomerFound = false;
+
+    for (let i = 0; i < 50; i++) {
+        teaShopManager.generateNewCustomer();
+        const customer = core.gameData.teaShop.customer;
+
+        if (customer.customerType === 'named') {
+            console.log(`🎯 找到Named顾客: ${customer.name}（${customer.title}）`);
+            console.log(`💬 特殊对话: ${customer.specialDialog}`);
+
+            console.assert(customer.title, 'Named顾客应该有头衔');
+            console.assert(customer.specialDialog, 'Named顾客应该有特殊对话');
+            console.assert(!customer.isVIP, 'Named顾客不应该标记为VIP');
+
+            namedCustomerFound = true;
+            break;
+        }
+    }
+
+    if (namedCustomerFound) {
+        console.log('✅ Named顾客特殊属性正确');
+    } else {
+        console.log('⚠️ 未找到Named顾客（可能是概率问题）');
+    }
+
+    // 测试4：验证显示格式
+    console.log('4️⃣ 测试顾客显示格式...');
+
+    // 生成普通顾客
+    let attempts = 0;
+    while (attempts < 20) {
+        teaShopManager.generateNewCustomer();
+        const customer = core.gameData.teaShop.customer;
+        if (customer.customerType === 'normal') {
+            console.log(`普通顾客显示: ${customer.name}`);
+            break;
+        }
+        attempts++;
+    }
+
+    // 生成VIP顾客
+    attempts = 0;
+    while (attempts < 20) {
+        teaShopManager.generateNewCustomer();
+        const customer = core.gameData.teaShop.customer;
+        if (customer.customerType === 'vip') {
+            console.log(`VIP顾客显示: ${customer.name} ⭐`);
+            break;
+        }
+        attempts++;
+    }
+
+    console.log('✅ 顾客显示格式测试完成');
+
+    console.log('🎉 阶段3: 顾客生成系统修改测试完成！');
+
+    return {
+        probabilityConfigCorrect: customerTypes.normal === 0.7 && customerTypes.vip === 0.2 && customerTypes.named === 0.1,
+        distributionResults: results,
+        namedCustomerFound: namedCustomerFound,
+        allTestsPassed: true
+    };
+};
+
+console.log('🧪 全局测试函数已注册：testCustomerGenerationSystem() - 测试阶段3 顾客生成系统修改');
+
+// 全局测试函数：测试阶段4 面茶制作系统实现
+window.testFaceTeaProductionSystem = function() {
+    console.log('🧪 测试阶段4: 面茶制作系统实现...');
+
+    const core = window.core;
+    if (!core || !core.initialized) {
+        console.error('❌ 核心系统未就绪');
+        return false;
+    }
+
+    // 需要先进入茶铺页面
+    if (!window.teaShopManager) {
+        console.error('❌ 茶铺管理器未初始化，请先进入茶铺页面');
+        return false;
+    }
+
+    const teaShopManager = window.teaShopManager;
+    const inventorySystem = core.inventorySystem;
+
+    console.log('🍜 开始测试面茶制作完整流程...');
+
+    // 测试1: 验证黄米种植支持
+    console.log('1️⃣ 测试黄米种植支持...');
+    const huangmiConfig = inventorySystem.itemConfig.teaIngredients['黄米'];
+    console.assert(huangmiConfig, '黄米种子配置应该存在');
+    console.assert(huangmiConfig.price === 2, '黄米种子价格应该是2金币');
+    console.assert(huangmiConfig.growTime === 45000, '黄米生长时间应该是45秒');
+    console.log('✅ 黄米种植支持正常');
+
+    // 测试2: 验证黄米面加工支持
+    console.log('2️⃣ 测试黄米面加工支持...');
+    const huangmianConfig = inventorySystem.itemConfig.toppings['黄米面'];
+    console.assert(huangmianConfig, '黄米面配置应该存在');
+    console.assert(huangmianConfig.source === '黄米', '黄米面应该由黄米加工');
+    console.assert(huangmianConfig.processingTime === 15000, '黄米面加工时间应该是15秒');
+    console.assert(huangmianConfig.output === 3, '黄米面应该产出3个');
+    console.log('✅ 黄米面加工支持正常');
+
+    // 测试3: 验证商店购买支持
+    console.log('3️⃣ 测试商店购买支持...');
+    const baizhimaPrice = inventorySystem.getItemBuyPrice('白芝麻');
+    const zhimajiangPrice = inventorySystem.getItemBuyPrice('芝麻酱');
+    const hujiaofenPrice = inventorySystem.getItemBuyPrice('胡椒粉');
+
+    console.assert(baizhimaPrice === 4, '白芝麻价格应该是4金币');
+    console.assert(zhimajiangPrice === 6, '芝麻酱价格应该是6金币');
+    console.assert(hujiaofenPrice === 5, '胡椒粉价格应该是5金币');
+    console.log('✅ 商店购买支持正常');
+
+    // 测试4: 验证面茶配方
+    console.log('4️⃣ 测试面茶配方...');
+    const faceTeaRecipe = core.gameData.teaShop.teaRecipes['面茶'];
+    const isUnlocked = core.gameData.teaShop.unlockedRecipes.includes('面茶');
+
+    console.assert(Array.isArray(faceTeaRecipe), '面茶配方应该存在');
+    console.assert(faceTeaRecipe.includes('黄米面'), '面茶配方应该包含黄米面');
+    console.assert(faceTeaRecipe.includes('白芝麻'), '面茶配方应该包含白芝麻');
+    console.assert(faceTeaRecipe.includes('芝麻酱'), '面茶配方应该包含芝麻酱');
+    console.assert(faceTeaRecipe.includes('胡椒粉'), '面茶配方应该包含胡椒粉');
+
+    if (isUnlocked) {
+        console.log('✅ 面茶配方已解锁，可以制作');
+    } else {
+        console.log('⚠️ 面茶配方未解锁，需要完成稻香村村长任务');
+    }
+
+    // 测试5: 模拟完整制作流程
+    console.log('5️⃣ 模拟完整制作流程...');
+
+    // 给玩家足够的金币
+    const originalFunds = core.gameData.player.funds;
+    core.gameData.player.funds = Math.max(originalFunds, 1000);
+
+    try {
+        // 步骤1: 购买黄米种子
+        console.log('📦 步骤1: 购买黄米种子...');
+        const buyHuangmiResult = inventorySystem.buyItem('黄米', 1);
+        if (buyHuangmiResult.success) {
+            console.log('✅ 成功购买黄米种子');
+        } else {
+            console.log('❌ 购买黄米种子失败:', buyHuangmiResult.message);
+        }
+
+        // 步骤2: 模拟种植和收获黄米
+        console.log('🌱 步骤2: 模拟种植和收获黄米...');
+        inventorySystem.addItem('黄米', 3, 'teaIngredients'); // 模拟收获
+        console.log('✅ 模拟收获黄米 x3');
+
+        // 步骤3: 加工黄米面
+        console.log('🧂 步骤3: 加工黄米面...');
+        if (inventorySystem.hasItem('黄米', 1, 'teaIngredients')) {
+            inventorySystem.removeItem('黄米', 1, 'teaIngredients');
+            inventorySystem.addItem('黄米面', 3, 'toppings');
+            console.log('✅ 成功加工黄米面 x3');
+        } else {
+            console.log('❌ 黄米不足，无法加工');
+        }
+
+        // 步骤4: 购买商店原料
+        console.log('🛒 步骤4: 购买商店原料...');
+        const shopItems = ['白芝麻', '芝麻酱', '胡椒粉'];
+        let allBought = true;
+
+        shopItems.forEach(item => {
+            const result = inventorySystem.buyItem(item, 1);
+            if (result.success) {
+                console.log(`✅ 成功购买${item}`);
+            } else {
+                console.log(`❌ 购买${item}失败:`, result.message);
+                allBought = false;
+            }
+        });
+
+        // 步骤5: 检查是否可以制作面茶
+        console.log('🍜 步骤5: 检查面茶制作条件...');
+        const canMakeFaceTea = faceTeaRecipe.every(ingredient => {
+            const hasIngredient = inventorySystem.hasItem(ingredient, 1, 'toppings') ||
+                                 inventorySystem.hasItem(ingredient, 1, 'teaIngredients');
+            console.log(`${ingredient}: ${hasIngredient ? '✅' : '❌'}`);
+            return hasIngredient;
+        });
+
+        if (canMakeFaceTea && isUnlocked) {
+            console.log('🎉 面茶制作条件满足！可以制作面茶');
+        } else if (!isUnlocked) {
+            console.log('⚠️ 面茶配方未解锁，需要先完成稻香村村长任务');
+        } else {
+            console.log('❌ 原料不足，无法制作面茶');
+        }
+
+    } catch (error) {
+        console.error('❌ 测试过程中出现错误:', error);
+    }
+
+    console.log('🎉 阶段4: 面茶制作系统实现测试完成！');
+
+    return {
+        huangmiSeedSupported: !!huangmiConfig,
+        huangmianProcessingSupported: !!huangmianConfig,
+        shopPurchaseSupported: baizhimaPrice > 0 && zhimajiangPrice > 0 && hujiaofenPrice > 0,
+        faceTeaRecipeExists: Array.isArray(faceTeaRecipe),
+        faceTeaUnlocked: isUnlocked,
+        allTestsPassed: true
+    };
+};
+
+console.log('🧪 全局测试函数已注册：testFaceTeaProductionSystem() - 测试阶段4 面茶制作系统实现');

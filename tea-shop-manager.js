@@ -75,6 +75,9 @@ class TeaShopManager {
      * 初始化UI
      */
     initializeUI() {
+        // 修复现有存档中的浮点数精度问题
+        this.fixAllPlotsFloatingPoint();
+
         this.updateAllDisplays();
         this.renderFarmGrid();
         this.renderWorkspaces();
@@ -401,6 +404,7 @@ class TeaShopManager {
     showProcessingModal(boardIndex) {
         this.addDebugLog(`显示加工配方 - 案板 #${boardIndex + 1}`);
 
+        // 🎉 地图完成奖励系统：动态读取加工配方，支持黄米面
         const processingRecipes = {
             '红糖': { source: '甘蔗', time: 10000, output: 3 },
             '薄荷叶': { source: '薄荷', time: 10000, output: 3 },
@@ -412,7 +416,9 @@ class TeaShopManager {
             '黄芪片': { source: '黄芪', time: 12000, output: 3 },
             '干桂花': { source: '桂花', time: 10000, output: 3 },
             '小圆子': { source: '糯米', time: 15000, output: 3 },
-            '酒酿': { source: '米', time: 18000, output: 3 }
+            '酒酿': { source: '米', time: 18000, output: 3 },
+            // 地图奖励新增加工原料（稻香村）
+            '黄米面': { source: '黄米', time: 15000, output: 3 }
         };
 
         let modalContent = `
@@ -631,8 +637,8 @@ class TeaShopManager {
             // 更新顾客耐心进度条
             this.updateCustomerProgressOnly();
 
-            // 应用天气效果到田地
-            this.applyWeatherEffectsToPlots();
+            // ❌ 已移除：天气效果现在由统一天气系统在天气变化时一次性应用
+            // this.applyWeatherEffectsToPlots();
         }, 1000);
 
         // 每5秒更新一次完整显示
@@ -676,10 +682,49 @@ class TeaShopManager {
     }
 
     /**
+     * 修正浮点数精度问题
+     */
+    fixFloatingPointPrecision(value) {
+        // 四舍五入到1位小数，然后转换为整数（如果是整数的话）
+        const rounded = Math.round(value * 10) / 10;
+        return rounded % 1 === 0 ? Math.round(rounded) : rounded;
+    }
+
+    /**
+     * 一次性修复所有地块的浮点数精度问题
+     */
+    fixAllPlotsFloatingPoint() {
+        let hasFixed = false;
+        this.core.gameData.teaShop.plots.forEach((plot, index) => {
+            const oldMoisture = plot.moisture;
+            const oldFertility = plot.fertility;
+
+            plot.moisture = this.fixFloatingPointPrecision(plot.moisture);
+            plot.fertility = this.fixFloatingPointPrecision(plot.fertility);
+
+            if (oldMoisture !== plot.moisture || oldFertility !== plot.fertility) {
+                hasFixed = true;
+                this.addDebugLog(`🔧 修复地块 #${index + 1} 精度问题: 湿度 ${oldMoisture}% → ${plot.moisture}%, 肥沃度 ${oldFertility}% → ${plot.fertility}%`);
+            }
+        });
+
+        if (hasFixed) {
+            this.addDebugLog('✅ 地块浮点数精度问题修复完成');
+            this.core.saveGameData(); // 保存修复后的数据
+        }
+
+        return hasFixed;
+    }
+
+    /**
      * 只更新湿度和肥沃度显示
      */
     updatePlotConditionsOnly() {
         this.core.gameData.teaShop.plots.forEach((plot, index) => {
+            // 修正浮点数精度问题
+            plot.moisture = this.fixFloatingPointPrecision(plot.moisture);
+            plot.fertility = this.fixFloatingPointPrecision(plot.fertility);
+
             // 更新湿度进度条
             const moistureProgressBar = document.querySelector(`#farm-grid .plot-card:nth-child(${index + 1}) .moisture-progress .progress-fill`);
             const moistureProgressText = document.querySelector(`#farm-grid .plot-card:nth-child(${index + 1}) .moisture-progress .progress-text`);
@@ -839,43 +884,17 @@ class TeaShopManager {
     }
 
     /**
-     * 应用天气效果到田地 - 使用统一天气系统
+     * 应用天气效果到田地 (已禁用 - 避免浮点数精度问题)
+     * 根据重建指导文档，天气影响应该是一次性效果，不是每秒持续影响
+     * 天气效果现在由 unified-weather-system.js 在天气变化时一次性应用
      */
     applyWeatherEffectsToPlots() {
-        // 使用统一天气系统
-        if (!this.core.weatherSystem || !this.core.weatherSystem.initialized) {
-            return;
-        }
-
-        const currentWeather = this.core.weatherSystem.getCurrentWeather();
-
-        this.core.gameData.teaShop.plots.forEach((plot, index) => {
-            if (plot.state === 'growing') {
-                // 按照旧游戏规律应用天气影响
-                switch (currentWeather) {
-                    case '下雨':
-                        // 雨天增加湿度
-                        plot.moisture = Math.min(100, plot.moisture + 0.5); // 每秒增加0.5%
-                        break;
-                    case '刮风':
-                        // 刮风降低湿度
-                        plot.moisture = Math.max(0, plot.moisture - 0.3); // 每秒减少0.3%
-                        break;
-                    case '下雪':
-                        // 下雪增加湿度和肥沃度
-                        plot.moisture = Math.min(100, plot.moisture + 0.4); // 每秒增加0.4%
-                        plot.fertility = Math.min(100, plot.fertility + 0.2); // 每秒增加0.2%
-                        break;
-                    case '晴天':
-                        // 晴天轻微消耗湿度
-                        plot.moisture = Math.max(0, plot.moisture - 0.1); // 每秒减少0.1%
-                        break;
-                    case '阴天':
-                        // 阴天无特殊影响
-                        break;
-                }
-            }
-        });
+        // ❌ 已禁用：每秒的小数运算会导致浮点数精度问题
+        // 例如：50 + 0.5 + 0.5 + 0.5... = 61.60000000000002%
+        //
+        // ✅ 正确做法：天气效果由统一天气系统在天气变化时一次性应用
+        // 参考：unified-weather-system.js 的 applyWeatherEffectsToPlots() 方法
+        return;
     }
 
     /**
@@ -2028,7 +2047,7 @@ class TeaShopManager {
             return;
         }
 
-        plot.moisture = Math.min(100, plot.moisture + 30);
+        plot.moisture = this.fixFloatingPointPrecision(Math.min(100, plot.moisture + 30));
         this.addDebugLog(`💧 浇水 - 地块 #${plotIndex + 1} 湿度: ${plot.moisture}%`);
 
         // 立即更新湿度显示
@@ -2046,7 +2065,7 @@ class TeaShopManager {
             return;
         }
 
-        plot.fertility = Math.min(100, plot.fertility + 25);
+        plot.fertility = this.fixFloatingPointPrecision(Math.min(100, plot.fertility + 25));
         this.addDebugLog(`🌿 施肥 - 地块 #${plotIndex + 1} 肥沃度: ${plot.fertility}%`);
 
         // 立即更新肥沃度显示
@@ -2726,29 +2745,58 @@ TeaShopManager.prototype.updateCustomerPatience = function() {
 
 TeaShopManager.prototype.generateNewCustomer = function() {
     const vipCustomerNames = ['池惊暮', '凌小路', '江飞飞', '江三', '江四', '池云旗', '江潮', '江敕封', '花花', '姬别情', '池九信', '狸怒'];
-    
+
     const customer = this.core.gameData.teaShop.customer;
-    
-    // 70%普通顾客，30%VIP顾客
-    const isVIP = Math.random() < 0.3;
-    
+    const customerTypes = this.core.gameData.teaShop.customerTypes;
+
+    // 🎉 地图完成奖励系统：三种顾客类型概率分布
+    const rand = Math.random();
+    let customerType, customerName, title = null, specialDialog = null;
+
+    if (rand < customerTypes.normal) {
+        // 普通顾客 (70%)
+        customerType = "normal";
+        customerName = "普通顾客";
+    } else if (rand < customerTypes.normal + customerTypes.vip) {
+        // VIP顾客 (20%)
+        customerType = "vip";
+        customerName = vipCustomerNames[Math.floor(Math.random() * vipCustomerNames.length)];
+    } else {
+        // Named顾客 (10%)
+        customerType = "named";
+        const namedCustomers = this.core.gameData.teaShop.namedCustomers;
+        if (namedCustomers.length > 0) {
+            const selectedNPC = namedCustomers[Math.floor(Math.random() * namedCustomers.length)];
+            customerName = selectedNPC.name;
+            title = selectedNPC.title;
+            specialDialog = selectedNPC.specialDialog;
+        } else {
+            // 回退到VIP（如果还没有Named顾客）
+            customerType = "vip";
+            customerName = vipCustomerNames[Math.floor(Math.random() * vipCustomerNames.length)];
+        }
+    }
+
     const wantsTopping = Math.random() < 0.8; // 80%概率要小料
 
     customer.active = true;
-    customer.customerType = isVIP ? 'vip' : 'normal';
-    customer.isVIP = isVIP; // 保持兼容性
-    
-    if (isVIP) {
-        customer.name = vipCustomerNames[Math.floor(Math.random() * vipCustomerNames.length)];
-    } else {
-        customer.name = "普通顾客";
-    }
+    customer.customerType = customerType;
+    customer.isVIP = (customerType === 'vip'); // 保持兼容性
+    customer.name = customerName;
+    customer.title = title; // Named顾客的头衔
+    customer.specialDialog = specialDialog; // Named顾客的特殊对话
     
     customer.orderType = wantsTopping ? 'tea_with_topping' : 'tea_only';
     customer.teaChoice = this.getRandomAvailableTea();
     customer.toppingChoice = wantsTopping ? this.getRandomAvailableTopping() : null;
     customer.arrivalTime = Date.now();
-    customer.patience = isVIP ? 240000 : 120000; // VIP 4分钟，普通2分钟
+
+    // 🎉 地图完成奖励系统：根据顾客类型设置耐心时间
+    if (customerType === 'vip' || customerType === 'named') {
+        customer.patience = 240000; // VIP和Named顾客都是4分钟
+    } else {
+        customer.patience = 120000; // 普通顾客2分钟
+    }
     customer.maxPatience = customer.patience;
 
     // 订单需求
@@ -2768,7 +2816,18 @@ TeaShopManager.prototype.generateNewCustomer = function() {
     const orderDesc = customer.requirements.needsTopping
         ? `${customer.teaChoice} + ${customer.toppingChoice}`
         : `${customer.teaChoice} (无小料)`;
-    this.addDebugLog(`👥 新顾客到来: ${customer.name} ${isVIP ? '(VIP)' : '(普通)'} - 想要 ${orderDesc}`);
+
+    // 🎉 地图完成奖励系统：三种顾客类型日志显示
+    let customerTypeDesc;
+    if (customerType === 'named') {
+        customerTypeDesc = `(Named-${customer.title})`;
+    } else if (customerType === 'vip') {
+        customerTypeDesc = '(VIP)';
+    } else {
+        customerTypeDesc = '(普通)';
+    }
+
+    this.addDebugLog(`👥 新顾客到来: ${customer.name} ${customerTypeDesc} - 想要 ${orderDesc}`);
     this.updateCustomerDisplay();
 };
 
@@ -3095,8 +3154,18 @@ TeaShopManager.prototype.updateCustomerDisplay = function() {
         const teaStatus = this.getTeaStatus(customer.teaChoice, customer);
         const toppingStatus = this.getToppingStatus(customer.toppingChoice, customer);
 
-        // 显示名称：普通顾客显示"普通顾客"，VIP显示名字+⭐
-        const displayName = customer.customerType === 'vip' ? `${customer.name} ⭐` : customer.name;
+        // 🎉 地图完成奖励系统：三种顾客类型显示格式
+        let displayName;
+        if (customer.customerType === 'named') {
+            // Named顾客：真实姓名 + 头衔，无⭐标记
+            displayName = `${customer.name}（${customer.title}）`;
+        } else if (customer.customerType === 'vip') {
+            // VIP顾客：名字 + ⭐标记
+            displayName = `${customer.name} ⭐`;
+        } else {
+            // 普通顾客：显示"普通顾客"
+            displayName = customer.name;
+        }
 
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -3947,3 +4016,22 @@ function forceRefreshCustomer() {
     
     console.log('✅ 顾客显示已刷新');
 }
+
+// 全局调试函数：修复地块浮点数精度问题
+window.fixPlotsPrecision = function() {
+    if (window.teaShopManager && window.teaShopManager.fixAllPlotsFloatingPoint) {
+        const hasFixed = window.teaShopManager.fixAllPlotsFloatingPoint();
+        if (hasFixed) {
+            console.log('🔧 地块浮点数精度问题已修复');
+            window.teaShopManager.renderFarmGrid(); // 重新渲染农田网格
+        } else {
+            console.log('✅ 地块数值正常，无需修复');
+        }
+        return hasFixed;
+    } else {
+        console.error('❌ 茶铺管理器未初始化');
+        return false;
+    }
+};
+
+console.log('🔧 全局调试函数已注册：fixPlotsPrecision() - 修复地块浮点数精度问题');

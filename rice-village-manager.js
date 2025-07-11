@@ -2156,10 +2156,16 @@ RiceVillageManager.prototype.handleWangFuDialog = function() {
                 gameData.unlockedMaps.push('扬州');
                 this.addDebugLog('🗺️ 扬州传送点已解锁！');
                 console.log('🗺️ 扬州传送点已解锁！');
-                
+
                 // 显示扬州地图按钮
                 this.showYangzhouMapButton();
             }
+
+            // 🎉 地图完成奖励系统：稻香村NPC转移到茶铺
+            this.transferRiceVillageNPCsToTeaShop();
+
+            // 🍜 村长特殊奖励：解锁面茶配方
+            this.unlockFaceTeaRecipe();
             
             // 更新显示和保存数据
             this.updateQuestDisplay();
@@ -4865,5 +4871,93 @@ function debugQuests() {
 
     alert(debugInfo);
 }
+
+/**
+ * 🎉 地图完成奖励系统：稻香村NPC转移到茶铺
+ * 根据重建指导文档实现
+ */
+RiceVillageManager.prototype.transferRiceVillageNPCsToTeaShop = function() {
+    if (!this._validateSystem()) return;
+
+    console.log('🏮 开始转移稻香村NPC到茶铺...');
+
+    // 稻香村NPC名单（根据重建指导文档）
+    const riceVillageNPCs = [
+        { name: '刘大海', title: '武学教头', specialDialog: '还记得在稻香村的武学训练吗？那些日子真是充实啊！' },
+        { name: '刘洋', title: '村长', specialDialog: '感谢你为稻香村所做的一切！现在村子很平静，我也能安心了。' },
+        { name: '王婆婆', title: '村民', specialDialog: '那些美好的稻香村时光...我还记得给你做的馒头呢！' },
+        { name: '少侠', title: '武学弟子', specialDialog: '师父说你的武艺进步很快，真是令人敬佩！' },
+        { name: '李复', title: '轻功师父', specialDialog: '你的轻功已经炉火纯青，青出于蓝而胜于蓝啊！' },
+        { name: '陈月', title: '村民', specialDialog: '稻香村现在很安全，多亏了你的帮助！' },
+        { name: '王富', title: '车夫', specialDialog: '那次送你去扬州的路上，你说的话我还记得呢！' },
+        { name: '秋叶青', title: '秋家大小姐', specialDialog: '江湖路远，但友谊长存。很高兴能在这里再次见到你！' },
+        { name: '武器铺老板', title: '武器商人', specialDialog: '你用过的那些武器，现在都成了店里的传说呢！' }
+    ];
+
+    // 将NPC添加到茶铺的Named顾客系统
+    const gameData = this.core.gameData;
+    if (!gameData.teaShop.namedCustomers) {
+        gameData.teaShop.namedCustomers = [];
+    }
+
+    // 检查是否已经转移过（避免重复转移）
+    if (gameData.teaShop.namedCustomers.length > 0) {
+        console.log('🏮 稻香村NPC已经转移过，跳过重复转移');
+        return;
+    }
+
+    // 转移所有NPC
+    gameData.teaShop.namedCustomers = [...riceVillageNPCs];
+
+    this.addDebugLog('🏮 稻香村NPC已转移到茶铺，成为Named顾客');
+    console.log('🏮 转移的NPC列表:', riceVillageNPCs.map(npc => npc.name).join(', '));
+
+    // 保存数据
+    this.core.saveGameData();
+
+    console.log('🎉 稻香村NPC转移完成！');
+};
+
+/**
+ * 🍜 村长特殊奖励：解锁面茶配方
+ * 根据重建指导文档实现
+ */
+RiceVillageManager.prototype.unlockFaceTeaRecipe = function() {
+    if (!this._validateSystem()) return;
+
+    console.log('🍜 开始解锁面茶配方...');
+
+    const gameData = this.core.gameData;
+    const teaRecipes = gameData.teaShop.teaRecipes;
+    const unlockedRecipes = gameData.teaShop.unlockedRecipes;
+
+    // 检查面茶配方是否已存在
+    if (!teaRecipes['面茶']) {
+        console.error('❌ 面茶配方未在系统中定义');
+        return;
+    }
+
+    // 检查是否已经解锁
+    if (unlockedRecipes.includes('面茶')) {
+        console.log('🍜 面茶配方已经解锁，跳过重复解锁');
+        return;
+    }
+
+    // 解锁面茶配方
+    unlockedRecipes.push('面茶');
+
+    this.addDebugLog('🍜 村长奖励：解锁面茶配方！');
+    console.log('🍜 面茶配方组成:', teaRecipes['面茶']);
+
+    // 显示解锁提示
+    this.showDialog('村长刘洋', '🍜 这是我们稻香村的传统面茶配方，是我祖传的秘方！\n\n配方：黄米面 + 白芝麻 + 芝麻酱 + 胡椒粉\n\n黄米需要种植黄米种子获得，然后加工成黄米面。其他原料可以在商店购买。', [
+        { text: '感谢村长！', action: 'closeDialog' }
+    ]);
+
+    // 保存数据
+    this.core.saveGameData();
+
+    console.log('🎉 面茶配方解锁完成！');
+};
 
 // 稻香村管理器实例将由HTML页面按正确时序创建

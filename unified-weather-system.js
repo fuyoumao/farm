@@ -334,6 +334,15 @@ class UnifiedWeatherSystem {
     }
 
     /**
+     * 修正浮点数精度问题
+     */
+    fixFloatingPointPrecision(value) {
+        // 四舍五入到1位小数，然后转换为整数（如果是整数的话）
+        const rounded = Math.round(value * 10) / 10;
+        return rounded % 1 === 0 ? Math.round(rounded) : rounded;
+    }
+
+    /**
      * 应用天气效果到田地 - 按照旧游戏规律
      */
     applyWeatherEffectsToFields(oldWeather, newWeather) {
@@ -348,18 +357,18 @@ class UnifiedWeatherSystem {
                 switch (newWeather) {
                     case '下雨':
                         // 雨天增加湿度
-                        plot.moisture = Math.min(100, plot.moisture + 20);
+                        plot.moisture = this.fixFloatingPointPrecision(Math.min(100, plot.moisture + 20));
                         console.log(`💧 雨水滋润了田地${index + 1}，湿度: ${plot.moisture}%`);
                         break;
                     case '刮风':
                         // 刮风降低湿度
-                        plot.moisture = Math.max(0, plot.moisture - 10);
+                        plot.moisture = this.fixFloatingPointPrecision(Math.max(0, plot.moisture - 10));
                         console.log(`💨 大风使田地${index + 1}的水分蒸发，湿度: ${plot.moisture}%`);
                         break;
                     case '下雪':
                         // 下雪增加湿度和肥沃度
-                        plot.moisture = Math.min(100, plot.moisture + 15);
-                        plot.fertility = Math.min(100, plot.fertility + 10);
+                        plot.moisture = this.fixFloatingPointPrecision(Math.min(100, plot.moisture + 15));
+                        plot.fertility = this.fixFloatingPointPrecision(Math.min(100, plot.fertility + 10));
                         console.log(`❄️ 雪花为田地${index + 1}带来了养分，湿度: ${plot.moisture}%, 肥沃度: ${plot.fertility}%`);
                         break;
                     case '晴天':
