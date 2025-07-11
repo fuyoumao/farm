@@ -2067,3 +2067,205 @@ window.testFaceTeaProductionSystem = function() {
 };
 
 console.log('🧪 全局测试函数已注册：testFaceTeaProductionSystem() - 测试阶段4 面茶制作系统实现');
+
+// 全局调试函数：检查刘洋任务和董虎攻击状态
+window.debugLiuYangDonghuIssue = function() {
+    console.log('🔍 调试刘洋任务和董虎攻击状态...');
+
+    const core = window.core;
+    if (!core || !core.initialized) {
+        console.error('❌ 核心系统未就绪');
+        return false;
+    }
+
+    const riceVillageManager = window.riceVillageManager;
+    if (!riceVillageManager) {
+        console.error('❌ 稻香村管理器未初始化，请先进入稻香村页面');
+        return false;
+    }
+
+    console.log('📋 === 刘洋任务状态检查 ===');
+
+    // 检查玩家基本信息
+    const player = core.gameData.player;
+    console.log(`👤 玩家等级: ${player.level}`);
+    console.log(`💰 玩家金币: ${player.funds}`);
+    console.log(`⚔️ 玩家攻击力: ${player.attack}`);
+
+    // 检查刘洋任务阶段
+    const questStage = core.gameData.riceVillage.questStages?.刘洋 || 0;
+    console.log(`📊 刘洋任务阶段: ${questStage}`);
+
+    // 检查活跃任务
+    const activeQuests = core.gameData.quests.active || [];
+    console.log(`📝 活跃任务数量: ${activeQuests.length}`);
+
+    // 查找刘洋的活跃任务
+    const liuYangQuests = activeQuests.filter(quest => quest.npc === '刘洋');
+    console.log(`🎯 刘洋的活跃任务:`, liuYangQuests);
+
+    // 检查是否有击败董虎的任务
+    const donghuQuest = activeQuests.find(quest =>
+        quest.npc === '刘洋' && quest.id === 'defeat_donghu'
+    );
+    console.log(`⚔️ 击败董虎任务:`, donghuQuest);
+
+    // 检查精致令牌
+    const hasToken = core.inventorySystem ?
+        core.inventorySystem.hasItem('精致令牌', 1) : false;
+    console.log(`🎫 是否有精致令牌: ${hasToken}`);
+
+    // 检查董虎攻击按钮状态
+    console.log('\n🐅 === 董虎攻击状态检查 ===');
+
+    // 使用稻香村管理器的函数检查
+    const hasDonghuQuest = riceVillageManager.hasActiveQuestFromNPC('刘洋', 'defeat_donghu');
+    console.log(`🎯 hasActiveQuestFromNPC('刘洋', 'defeat_donghu'): ${hasDonghuQuest}`);
+
+    // 检查DOM中的董虎攻击按钮
+    const donghuRow = document.querySelector('[data-monster="董虎"]');
+    if (donghuRow) {
+        const attackButton = donghuRow.querySelector('button');
+        const isDisabled = attackButton ? attackButton.disabled : '按钮不存在';
+        console.log(`🔘 董虎攻击按钮状态: ${isDisabled ? '禁用' : '可用'}`);
+        console.log(`🔘 按钮HTML:`, attackButton ? attackButton.outerHTML : '无');
+    } else {
+        console.log(`❌ 找不到董虎的怪物行`);
+    }
+
+    // 分析问题
+    console.log('\n🔍 === 问题分析 ===');
+
+    if (questStage < 8) {
+        console.log(`❌ 问题：刘洋任务阶段不足 (当前${questStage}，需要8)`);
+        console.log(`💡 解决：需要完成前面的任务到第8阶段`);
+    } else if (player.level < 10) {
+        console.log(`❌ 问题：玩家等级不足 (当前${player.level}级，需要10级)`);
+        console.log(`💡 解决：需要升级到10级`);
+    } else if (!hasToken) {
+        console.log(`❌ 问题：缺少精致令牌`);
+        console.log(`💡 解决：需要找王婆婆获得精致令牌`);
+    } else if (!donghuQuest) {
+        console.log(`❌ 问题：没有击败董虎的任务`);
+        console.log(`💡 解决：需要与刘洋对话接取击败董虎的任务`);
+    } else if (!hasDonghuQuest) {
+        console.log(`❌ 问题：hasActiveQuestFromNPC函数返回false`);
+        console.log(`💡 解决：可能是任务检查逻辑有问题`);
+    } else {
+        console.log(`✅ 所有条件都满足，董虎应该可以攻击`);
+    }
+
+    return {
+        questStage: questStage,
+        playerLevel: player.level,
+        hasToken: hasToken,
+        donghuQuest: donghuQuest,
+        hasDonghuQuest: hasDonghuQuest,
+        activeQuests: activeQuests
+    };
+};
+
+console.log('🔍 全局调试函数已注册：debugLiuYangDonghuIssue() - 调试刘洋任务和董虎攻击状态');
+
+// 全局调试函数：快速推进刘洋任务到可以击败董虎的阶段
+window.fastTrackLiuYangQuests = function() {
+    console.log('🚀 快速推进刘洋任务到击败董虎阶段...');
+
+    const core = window.core;
+    if (!core || !core.initialized) {
+        console.error('❌ 核心系统未就绪');
+        return false;
+    }
+
+    const player = core.gameData.player;
+    const riceVillage = core.gameData.riceVillage;
+    const inventorySystem = core.inventorySystem;
+
+    console.log('📋 开始设置前置条件...');
+
+    // 1. 设置刘洋任务阶段为8（完成前8个任务）
+    if (!riceVillage.questStages) {
+        riceVillage.questStages = {};
+    }
+    riceVillage.questStages['刘洋'] = 8;
+
+    // 同时更新NPC数据中的questStage
+    if (!riceVillage.npcs) {
+        riceVillage.npcs = {};
+    }
+    if (!riceVillage.npcs['刘洋']) {
+        riceVillage.npcs['刘洋'] = {};
+    }
+    riceVillage.npcs['刘洋'].questStage = 8;
+
+    console.log('✅ 刘洋任务阶段设置为8（两个数据结构都已更新）');
+
+    // 2. 提升玩家等级到10级
+    if (player.level < 10) {
+        const expNeeded = 10 * 100 - player.exp; // 假设每级需要100经验
+        player.exp += Math.max(expNeeded, 0);
+        player.level = 10;
+        console.log('✅ 玩家等级提升到10级');
+    }
+
+    // 3. 添加精致令牌到背包
+    inventorySystem.addItem('精致令牌', 1, 'questItems');
+    console.log('✅ 添加精致令牌到背包');
+
+    // 4. 提升玩家攻击力（如果需要）
+    if (!player.attack || player.attack < 20) {
+        player.attack = 25;
+        console.log('✅ 设置玩家攻击力为25');
+    }
+
+    // 5. 确保有足够金币
+    if (player.funds < 500) {
+        player.funds = 1000;
+        console.log('✅ 设置玩家金币为1000');
+    }
+
+    // 6. 清除可能冲突的活跃任务
+    if (core.gameData.quests && core.gameData.quests.active) {
+        const conflictQuests = core.gameData.quests.active.filter(q => q.npc === '刘洋');
+        conflictQuests.forEach(quest => {
+            const index = core.gameData.quests.active.indexOf(quest);
+            if (index > -1) {
+                core.gameData.quests.active.splice(index, 1);
+            }
+        });
+        console.log(`✅ 清除${conflictQuests.length}个冲突的刘洋任务`);
+    }
+
+    // 7. 保存数据
+    core.saveGameData();
+    console.log('💾 数据已保存');
+
+    // 8. 刷新稻香村页面显示（如果在稻香村页面）
+    if (window.riceVillageManager) {
+        try {
+            // 刷新NPC状态显示
+            window.riceVillageManager.renderNPCTable();
+            // 刷新怪物显示（更新董虎攻击按钮）
+            window.riceVillageManager.renderMonstersTable();
+            console.log('✅ 稻香村页面显示已刷新');
+        } catch (error) {
+            console.log('⚠️ 稻香村页面刷新失败，请手动刷新页面');
+        }
+    }
+
+    console.log('\n🎉 刘洋任务快速推进完成！');
+    console.log('📋 现在你可以：');
+    console.log('1. 与刘洋对话接取"击败山贼头目董虎"任务');
+    console.log('2. 攻击董虎（攻击按钮应该可用了）');
+    console.log('3. 如果显示没更新，请刷新稻香村页面');
+
+    return {
+        questStage: riceVillage.questStages['刘洋'],
+        playerLevel: player.level,
+        playerAttack: player.attack,
+        playerFunds: player.funds,
+        hasToken: inventorySystem.hasItem('精致令牌', 1)
+    };
+};
+
+console.log('🚀 全局调试函数已注册：fastTrackLiuYangQuests() - 快速推进刘洋任务');

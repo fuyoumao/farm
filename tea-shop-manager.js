@@ -2097,80 +2097,7 @@ function clearDebugLog() {
     teaShopManager.updateDebugDisplay();
 }
 
-// 快速测试函数
-function quickTestGrill() {
-    teaShopManager.addDebugLog('🔥 快速测试：解锁烤肉系统');
-    teaShopManager.core.gameData.teaShop.grillSystem.unlocked = true;
-    teaShopManager.inventory.addItem('兔肉', 5, 'meatIngredients');
-    teaShopManager.renderWorkspaces();
-    teaShopManager.updateInventoryDisplay();
-}
 
-function quickTestCat() {
-    teaShopManager.addDebugLog('🐱 快速测试：猫咪来访');
-    const cats = teaShopManager.core.gameData.teaShop.cats;
-    cats.currentCat = '大橘猫';
-    cats.intimacy['大橘猫'] = 4500; // 接近满级
-    teaShopManager.inventory.addItem('小鱼干', 10, 'specialItems');
-    teaShopManager.renderCatsTable();
-    teaShopManager.updateInventoryDisplay();
-}
-
-function quickTestCustomer() {
-    teaShopManager.addDebugLog('👥 快速测试：顾客到来');
-    // 这里会在后续实现顾客系统时添加
-}
-
-function addTestItems() {
-    teaShopManager.addDebugLog('📦 添加测试物品');
-    const items = [
-        ['五味子', 10, 'teaIngredients'],
-        ['柠檬', 10, 'teaIngredients'],
-        ['红糖', 20, 'toppings'],
-        ['小鱼干', 15, 'specialItems'],
-        // 添加种子用于测试种植
-        ['五味子', 5, 'seeds'],
-        ['柠檬', 5, 'seeds'],
-        ['乌梅', 3, 'seeds'],
-        ['山楂', 3, 'seeds']
-    ];
-
-    items.forEach(([name, count, category]) => {
-        teaShopManager.inventory.addItem(name, count, category);
-    });
-
-    teaShopManager.updateInventoryDisplay();
-}
-
-function quickTestPlanting() {
-    teaShopManager.addDebugLog('🌱 快速测试：种植系统');
-
-    // 添加种子
-    teaShopManager.inventory.addItem('五味子', 10, 'seeds');
-    teaShopManager.inventory.addItem('柠檬', 10, 'seeds');
-
-    // 自动在第一块地种植五味子（如果空闲）
-    const plot1 = teaShopManager.core.gameData.teaShop.plots[0];
-    if (plot1.state === 'empty') {
-        teaShopManager.plantSeed(0, '五味子');
-    }
-
-    // 自动在第二块地种植柠檬（如果空闲）
-    const plot2 = teaShopManager.core.gameData.teaShop.plots[1];
-    if (plot2.state === 'empty') {
-        teaShopManager.plantSeed(1, '柠檬');
-    }
-
-    teaShopManager.updateInventoryDisplay();
-    teaShopManager.addDebugLog('🌱 已自动种植测试作物，请观察进度条');
-}
-
-function unlockRiceVillage() {
-    teaShopManager.addDebugLog('🗝️ 强制解锁稻香村');
-    teaShopManager.core.gameData.teaShop.cats.intimacy['大橘猫'] = 5000;
-    teaShopManager.updateRiceVillageButton();
-    teaShopManager.renderCatsTable();
-}
 
 function goToRiceVillage() {
     if (teaShopManager.core.gameData.riceVillage.unlocked) {
@@ -2447,7 +2374,6 @@ function showHelp() {
 
                     <h4>🎮 快速操作</h4>
                     <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.6;">
-                        <li><strong>快速测试</strong>：使用页面上的测试按钮快速体验功能</li>
                         <li><strong>调试面板</strong>：点击右下角🛠图标查看系统日志</li>
                         <li><strong>数据同步</strong>：茶铺和稻香村数据完全同步</li>
                         <li><strong>自动保存</strong>：每30秒自动保存到浏览器本地</li>
@@ -3922,100 +3848,7 @@ function confirmCatCompanion(goToRiceVillage = true) {
 
 // 其他UI函数已在上面实现
 
-// 测试顾客系统功能
-function testCustomerSystem() {
-    console.log('🧪 开始测试顾客系统...');
-    
-    if (!window.teaShopManager) {
-        console.error('❌ 茶铺管理器未找到');
-        return;
-    }
-    
-    const manager = window.teaShopManager;
-    
-    // 测试1：强制生成顾客
-    console.log('📋 测试1：强制生成顾客');
-    manager.generateNewCustomer();
-    
-    const customer = manager.core.gameData.teaShop.customer;
-    
-    if (!customer.active) {
-        console.error('❌ 顾客生成失败');
-        return;
-    }
-    
-    console.log('✅ 顾客生成成功');
-    console.log(`👤 顾客信息: ${customer.name} ${customer.isVIP ? '(VIP)' : '(普通)'}`);
-    console.log(`🍵 要求茶饮: ${customer.teaChoice}`);
-    console.log(`🧂 要求小料: ${customer.toppingChoice || '无'}`);
-    console.log(`⏰ 耐心时间: ${customer.patience/1000}秒`);
-    
-    // 测试2：检查VIP概率
-    console.log('\n📋 测试2：检查VIP概率（应该约为30%）');
-    let vipCount = 0;
-    const testCount = 100;
-    
-    for (let i = 0; i < testCount; i++) {
-        manager.generateNewCustomer();
-        if (manager.core.gameData.teaShop.customer.isVIP) {
-            vipCount++;
-        }
-    }
-    
-    const vipRate = (vipCount / testCount) * 100;
-    console.log(`🎯 生成${testCount}次顾客，VIP数量: ${vipCount} (${vipRate.toFixed(1)}%)`);
-    
-    if (vipRate >= 20 && vipRate <= 40) {
-        console.log('✅ VIP概率测试通过（在合理范围内）');
-    } else {
-        console.log('❌ VIP概率测试可能有偏差（期望约30%）');
-    }
-    
-    // 测试3：检查耐心时间
-    console.log('\n📋 测试3：检查耐心时间（VIP 240秒，普通 120秒）');
-    manager.generateNewCustomer();
-    const currentCustomer = manager.core.gameData.teaShop.customer;
-    const patience = currentCustomer.patience;
-    const isVIP = currentCustomer.isVIP;
-    const expectedPatience = isVIP ? 240000 : 120000;
-    
-    if (patience === expectedPatience) {
-        console.log(`✅ 耐心时间测试通过: ${patience/1000}秒 (${isVIP ? 'VIP' : '普通'}顾客)`);
-    } else {
-        console.log(`❌ 耐心时间测试失败: ${patience/1000}秒 (期望${expectedPatience/1000}秒，${isVIP ? 'VIP' : '普通'}顾客)`);
-    }
-    
-    console.log('\n🎉 顾客系统测试完成！');
-    console.log('💡 提示：如果顾客仍然不显示，请检查HTML页面的customer-table元素是否存在');
-    
-    return {
-        customerGenerated: customer.active,
-        customerName: customer.name,
-        isVIP: customer.isVIP,
-        patience: customer.patience,
-        vipRate: vipRate
-    };
-}
 
-// 强制刷新顾客显示
-function forceRefreshCustomer() {
-    console.log('🔄 强制刷新顾客显示...');
-    
-    if (!window.teaShopManager) {
-        console.error('❌ 茶铺管理器未找到');
-        return;
-    }
-    
-    const manager = window.teaShopManager;
-    
-    // 重置上次顾客时间，强制允许生成新顾客
-    manager.core.gameData.teaShop.lastCustomerTime = 0;
-    
-    // 强制生成新顾客
-    manager.generateNewCustomer();
-    
-    console.log('✅ 顾客显示已刷新');
-}
 
 // 全局调试函数：修复地块浮点数精度问题
 window.fixPlotsPrecision = function() {
@@ -4035,3 +3868,153 @@ window.fixPlotsPrecision = function() {
 };
 
 console.log('🔧 全局调试函数已注册：fixPlotsPrecision() - 修复地块浮点数精度问题');
+
+// 全局商店功能
+function showShop() {
+    if (!window.teaShopManager || !window.teaShopManager.core) {
+        alert('❌ 茶铺系统未初始化，请刷新页面');
+        return;
+    }
+
+    const core = window.teaShopManager.core;
+    const inventorySystem = core.inventorySystem;
+    const player = core.gameData.player;
+
+    // 根据重建指导文档的商店配置
+    const shopItems = [
+        // 基础小料
+        { name: '蜂蜜', price: 3, category: 'toppings', description: '天然蜂蜜，甜而不腻' },
+        { name: '冰糖', price: 3, category: 'toppings', description: '清甜冰糖，清热润燥' },
+        { name: '乌龙茶包', price: 4, category: 'toppings', description: '优质乌龙茶包，香气浓郁' },
+
+        // 面茶专用原料（稻香村奖励配方）
+        { name: '白芝麻', price: 4, category: 'toppings', description: '香醇白芝麻，面茶必备' },
+        { name: '芝麻酱', price: 6, category: 'toppings', description: '浓郁芝麻酱，面茶精华' },
+        { name: '胡椒粉', price: 5, category: 'toppings', description: '温热胡椒粉，面茶调味' },
+
+        // 特殊物品
+        { name: '小鱼干', price: 5, category: 'specialItems', description: '猫咪最爱的小鱼干' },
+
+        // 茶饮原料
+        { name: '银耳', price: 3, category: 'teaIngredients', description: '滋补银耳，润燥养颜' }
+    ];
+
+    // 创建商店模态框
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    `;
+
+    const shopPanel = document.createElement('div');
+    shopPanel.style.cssText = `
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    `;
+
+    let shopHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #333;">茶铺商店</h2>
+            <button onclick="closeShop()" style="background: white; color: #333; border: 1px solid #ddd; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 16px;">关闭</button>
+        </div>
+
+        <div style="margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+            <strong>当前金币：${player.funds}</strong>
+        </div>
+
+        <div style="display: grid; gap: 10px;">
+    `;
+
+    shopItems.forEach(item => {
+        const canAfford = player.funds >= item.price;
+        const buttonStyle = canAfford ?
+            'background: white; color: #333; border: 1px solid #ddd; padding: 8px 15px; border-radius: 5px; cursor: pointer;' :
+            'background: #f5f5f5; color: #999; border: 1px solid #ddd; padding: 8px 15px; border-radius: 5px; cursor: not-allowed;';
+
+        shopHTML += `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <div>
+                    <strong>${item.name}</strong>
+                    <div style="font-size: 12px; color: #666;">${item.description}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: bold; color: #333;">${item.price} 金币</div>
+                    <button onclick="buyShopItem('${item.name}', ${item.price}, '${item.category}')"
+                            style="${buttonStyle}"
+                            ${!canAfford ? 'disabled' : ''}>
+                        购买
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    shopHTML += `
+        </div>
+        <div style="margin-top: 15px; padding: 10px; background: #e3f2fd; border-radius: 5px; font-size: 14px;">
+            <strong>提示：</strong>购买的物品会自动添加到背包中，可立即使用制茶。
+        </div>
+    `;
+
+    shopPanel.innerHTML = shopHTML;
+    modal.appendChild(shopPanel);
+    document.body.appendChild(modal);
+
+    // 添加关闭商店的全局函数
+    window.closeShop = function() {
+        modal.remove();
+        delete window.closeShop;
+        delete window.buyShopItem;
+    };
+
+    // 添加购买物品的全局函数
+    window.buyShopItem = function(itemName, price, category) {
+        if (player.funds < price) {
+            alert(`❌ 金币不足！需要 ${price} 金币，当前只有 ${player.funds} 金币。`);
+            return;
+        }
+
+        // 使用统一背包系统购买物品
+        const result = inventorySystem.buyItem(itemName, 1, 'general');
+
+        if (result.success) {
+            // 更新显示
+            window.teaShopManager.updateInventoryDisplay();
+            alert(`✅ ${result.message}`);
+
+            // 关闭并重新打开商店以更新金币显示
+            closeShop();
+            showShop();
+        } else {
+            alert(`❌ 购买失败：${result.message}`);
+        }
+    };
+}
+
+console.log('🏪 全局商店功能已注册：showShop() - 茶铺商店系统');
+
+// 全局函数：关闭礼物弹窗
+function closeGiftModal() {
+    // 查找并关闭礼物模态框
+    const modals = document.querySelectorAll('div[style*="position: fixed"]');
+    modals.forEach(modal => {
+        if (modal.innerHTML.includes('🎁') || modal.innerHTML.includes('礼物')) {
+            modal.remove();
+        }
+    });
+}
+
+console.log('🎁 全局礼物功能已注册：closeGiftModal() - 关闭礼物弹窗');

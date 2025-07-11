@@ -18,6 +18,7 @@
         <div class="nav-bar">
             <button class="nav-btn" onclick="goToTeaShop()">返回茶铺</button>
             <button class="nav-btn" onclick="showInventory()" style="background: #666; color: white;">背包</button>
+            <button class="nav-btn" onclick="showShop()" style="background: #666; color: white;">商店</button>
             <button class="nav-btn" onclick="showPartnerSelection()" style="background: #666; color: white;">选择伙伴</button>
             <!-- 核心调试功能 - 按照重建指导文档保留 -->
             <button class="nav-btn" onclick="debugNPCStatus()" style="background: #666; color: white;">NPC状态</button>
@@ -198,25 +199,7 @@
     <!-- 模态框容器 -->
     <div id="modal-container"></div>
 
-    <!-- 独立的测试按钮 - 悬浮在右下角 -->
-    <div style="
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 9999;
-        background: #FFA500;
-        color: white;
-        padding: 12px 16px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: bold;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        border: none;
-        user-select: none;
-    " onclick="testCompleteAllQuests()" title="快速完成所有任务，设置玩家为11级">
-        🧪 完成所有任务
-    </div>
+
 
     <!-- 旧悬浮背包已删除 - 按照重建指导文档使用独立背包系统 -->
 
@@ -343,6 +326,136 @@
             window.location.href = 'index.html';
         }
 
+        // 显示商店界面
+        function showShop() {
+            if (!window.riceVillageManager || !window.riceVillageManager.core) {
+                alert('❌ 系统未初始化，请刷新页面');
+                return;
+            }
+
+            const core = window.riceVillageManager.core;
+            const inventorySystem = core.inventorySystem;
+            const player = core.gameData.player;
+
+            // 根据重建指导文档的商店配置
+            const shopItems = [
+                { name: '蜂蜜', price: 3, category: 'toppings', description: '天然蜂蜜，甜而不腻' },
+                { name: '银耳', price: 3, category: 'teaIngredients', description: '滋补银耳，润燥养颜' },
+                { name: '红糖', price: 2, category: 'toppings', description: '温补红糖，暖胃驱寒' },
+                { name: '小鱼干', price: 5, category: 'specialItems', description: '猫咪最爱的小鱼干' },
+                { name: '冰糖', price: 3, category: 'toppings', description: '清甜冰糖，清热润燥' },
+                // 面茶新增商店原料
+                { name: '白芝麻', price: 4, category: 'toppings', description: '香醇白芝麻，面茶必备' },
+                { name: '芝麻酱', price: 6, category: 'toppings', description: '浓郁芝麻酱，面茶精华' },
+                { name: '胡椒粉', price: 5, category: 'toppings', description: '温热胡椒粉，面茶调味' }
+            ];
+
+            // 创建商店模态框
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            `;
+
+            const shopPanel = document.createElement('div');
+            shopPanel.style.cssText = `
+                background: white;
+                border-radius: 15px;
+                padding: 20px;
+                max-width: 600px;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            `;
+
+            let shopHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #333;">🏪 稻香村商店</h2>
+                    <button onclick="closeShop()" style="background: #F44336; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 16px;">✕</button>
+                </div>
+
+                <div style="margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                    <strong>💰 当前金币：${player.funds}</strong>
+                </div>
+
+                <div style="display: grid; gap: 10px;">
+            `;
+
+            shopItems.forEach(item => {
+                const canAfford = player.funds >= item.price;
+                const buttonStyle = canAfford ?
+                    'background: #4CAF50; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;' :
+                    'background: #ccc; color: #666; border: none; padding: 8px 15px; border-radius: 5px; cursor: not-allowed;';
+
+                shopHTML += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <div>
+                            <strong>${item.name}</strong>
+                            <div style="font-size: 12px; color: #666;">${item.description}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: bold; color: #333;">${item.price} 金币</div>
+                            <button onclick="buyShopItem('${item.name}', ${item.price}, '${item.category}')"
+                                    style="${buttonStyle}"
+                                    ${!canAfford ? 'disabled' : ''}>
+                                购买
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            shopHTML += `
+                </div>
+                <div style="margin-top: 15px; padding: 10px; background: #e3f2fd; border-radius: 5px; font-size: 14px;">
+                    <strong>💡 提示：</strong>购买的物品会自动添加到背包中，可在茶铺使用。
+                </div>
+            `;
+
+            shopPanel.innerHTML = shopHTML;
+            modal.appendChild(shopPanel);
+            document.body.appendChild(modal);
+
+            // 添加关闭商店的全局函数
+            window.closeShop = function() {
+                modal.remove();
+                delete window.closeShop;
+                delete window.buyShopItem;
+            };
+
+            // 添加购买物品的全局函数
+            window.buyShopItem = function(itemName, price, category) {
+                if (player.funds < price) {
+                    alert(`❌ 金币不足！需要 ${price} 金币，当前只有 ${player.funds} 金币。`);
+                    return;
+                }
+
+                // 扣除金币
+                player.funds -= price;
+
+                // 添加物品到背包
+                inventorySystem.addItem(itemName, 1, category);
+
+                // 保存数据
+                core.saveGameData();
+
+                // 更新显示
+                alert(`✅ 成功购买 ${itemName}！花费 ${price} 金币。`);
+
+                // 关闭并重新打开商店以更新金币显示
+                closeShop();
+                showShop();
+            };
+        }
+
 
 
         // 调试任务系统
@@ -375,318 +488,8 @@
             showSimpleAlert(debugInfo);
         }
 
-        // 测试：完成所有任务（保留刘洋最后一个任务）
-        function testCompleteAllQuests() {
-            if (!window.riceVillageManager || !window.riceVillageManager.core.initialized) {
-                console.error('❌ 稻香村管理器未初始化');
-                showSimpleAlert('错误：稻香村管理器未初始化！');
-                return;
-            }
-
-            console.log('🧪 开始测试：完成所有任务');
-            
-            const core = window.riceVillageManager.core;
-            const gameData = core.gameData;
-            
-            // 调试：显示当前玩家状态
-            console.log('🔍 当前玩家状态:', {
-                level: gameData.player.level,
-                exp: gameData.player.exp,
-                gold: gameData.player.gold,
-                name: gameData.player.name
-            });
-            
-            // 清空当前活跃任务
-            gameData.quests.active = [];
-            gameData.quests.completed = gameData.quests.completed || [];
-            gameData.quests.progress = {};
-            
-            // 设置刘洋的questStage到9，这样他会给出最后一个找车夫的任务
-            const liuYangNPC = gameData.riceVillage.npcs['刘洋'];
-            if (liuYangNPC) {
-                liuYangNPC.questStage = 9;
-                console.log('📈 设置刘洋questStage到9');
-            } else {
-                console.error('❌ 未找到刘洋NPC');
-            }
-            
-            // 设置王婆婆为完全完成状态
-            const wangPoPoNPC = gameData.riceVillage.npcs['王婆婆'];
-            if (wangPoPoNPC) {
-                wangPoPoNPC.questStage = 7;
-                console.log('📈 设置王婆婆questStage到7');
-            } else {
-                console.error('❌ 未找到王婆婆NPC');
-            }
-            
-            // 给玩家相关奖励物品
-            if (core.inventorySystem) {
-                // 王婆婆任务完成奖励：精致令牌
-                core.inventorySystem.addItem('精致令牌', 1);
-                console.log('📦 添加精致令牌');
-                
-                // 确保equipment数组存在
-                if (!gameData.inventory.equipment) {
-                    gameData.inventory.equipment = [];
-                }
-                
-                // 添加村长佩剑
-                const villageChiefSword = {
-                    id: 'village_chief_sword_' + Date.now(),
-                    name: '村长佩剑',
-                    type: 'weapon',
-                    attack: 8,
-                    equipped: false
-                };
-                gameData.inventory.equipment.push(villageChiefSword);
-                
-                // 添加董虎战刀
-                const donghuSaber = {
-                    id: 'donghu_saber_' + Date.now(),
-                    name: '董虎战刀',
-                    type: 'weapon',
-                    attack: 12,
-                    equipped: false
-                };
-                gameData.inventory.equipment.push(donghuSaber);
-                
-                console.log('⚔️ 添加武器装备');
-            } else {
-                console.error('❌ 统一背包系统未初始化');
-            }
-            
-            // 设置角色等级到11级 - 加强调试
-            const oldLevel = gameData.player.level;
-            const oldExp = gameData.player.exp;
-            const oldGold = gameData.player.gold;
-            
-            gameData.player.level = 11;
-            gameData.player.exp = 1200;
-            gameData.player.gold = (gameData.player.gold || 0) + 500;
-            
-            console.log('📊 等级设置详情:', {
-                '原等级': oldLevel,
-                '新等级': gameData.player.level,
-                '原经验': oldExp,
-                '新经验': gameData.player.exp,
-                '原金币': oldGold,
-                '新金币': gameData.player.gold
-            });
-            
-            // 模拟完成的任务（添加到completed列表）
-            const completedQuests = [
-                // 刘洋的前9个任务
-                { id: 'clear_boars', name: '清理野猪威胁', npc: '刘洋', status: 'completed' },
-                { id: 'collect_food', name: '收集村民口粮', npc: '刘洋', status: 'completed' },
-                { id: 'patrol_supply', name: '为巡逻队提供补给', npc: '刘洋', status: 'completed' },
-                { id: 'defense_materials', name: '收集防御材料', npc: '刘洋', status: 'completed' },
-                { id: 'defend_village', name: '保卫村庄', npc: '刘洋', status: 'completed' },
-                { id: 'medical_supplies', name: '收集村民生活用品', npc: '刘洋', status: 'completed' },
-                { id: 'healing_tea', name: '制作村民药茶', npc: '刘洋', status: 'completed' },
-                { id: 'final_defense', name: '村庄最终防务', npc: '刘洋', status: 'completed' },
-                { id: 'defeat_donghu', name: '击败山贼头目董虎', npc: '刘洋', status: 'completed' },
-                
-                // 王婆婆的所有任务
-                { id: 'deliver_mantou', name: '为王婆婆送馒头', npc: '王婆婆', status: 'completed' },
-                { id: 'collect_zhixuecao', name: '采集止血草', npc: '王婆婆', status: 'completed' },
-                { id: 'kill_guozili', name: '击败果子狸', npc: '王婆婆', status: 'completed' },
-                { id: 'kill_houzi', name: '击败猴子', npc: '王婆婆', status: 'completed' },
-                { id: 'kill_shanzei_final', name: '击败山贼', npc: '王婆婆', status: 'completed' }
-            ];
-            
-            gameData.quests.completed.push(...completedQuests);
-            console.log('📋 添加已完成任务记录');
-            
-            // 保存数据
-            core.saveGameData();
-            console.log('💾 数据已保存');
-            
-            // 强制刷新所有界面显示
-            if (window.riceVillageManager.updatePlayerStatus) {
-                window.riceVillageManager.updatePlayerStatus();
-                console.log('🔄 已刷新玩家状态显示');
-            }
-            
-            if (window.riceVillageManager.updateQuestDisplay) {
-                window.riceVillageManager.updateQuestDisplay();
-                console.log('🔄 已刷新任务显示');
-            }
-            
-            if (window.riceVillageManager.renderNPCsTable) {
-                window.riceVillageManager.renderNPCsTable();
-                console.log('🔄 已刷新NPC显示');
-            }
-            
-            // 最终验证
-            console.log('🔍 设置后玩家状态:', {
-                level: gameData.player.level,
-                exp: gameData.player.exp,
-                gold: gameData.player.gold,
-                刘洋QuestStage: liuYangNPC ? liuYangNPC.questStage : 'NPC不存在',
-                王婆婆QuestStage: wangPoPoNPC ? wangPoPoNPC.questStage : 'NPC不存在'
-            });
-            
-            console.log('✅ 测试完成！');
-            
-            // 使用可靠的弹窗显示结果
-            setTimeout(function() {
-                try {
-                    showSimpleAlert('🧪 测试完成！\\n\\n设置完成：\\n• 刘洋questStage: 9\\n• 王婆婆questStage: 7\\n• 玩家等级: 11级\\n• 添加了精致令牌和武器\\n\\n请检查控制台查看详细信息，现在可以找刘洋对话！');
-                } catch (e) {
-                    // 如果showSimpleAlert失败，使用原生alert
-                    alert('🧪 测试完成！\\n\\n设置完成：\\n• 刘洋questStage: 9\\n• 王婆婆questStage: 7\\n• 玩家等级: 11级\\n• 添加了精致令牌和武器\\n\\n请检查控制台查看详细信息，现在可以找刘洋对话！');
-                }
-            }, 100);
-        }
-
-        // 显示测试结果模态弹窗（确保正确居中显示）
-        function showTestResultModal(title, content, color = '#4CAF50') {
-            // 移除已存在的测试结果弹窗
-            const existingModal = document.getElementById('test-result-modal');
-            if (existingModal) {
-                existingModal.remove();
-            }
-
-            // 创建模态弹窗 - 使用更强制的定位方式
-            const modal = document.createElement('div');
-            modal.id = 'test-result-modal';
-            
-            // 获取视窗尺寸
-            const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
-            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-            
-            // 强制设置为绝对定位到视窗
-            modal.style.position = 'fixed';
-            modal.style.top = '0px';
-            modal.style.left = '0px';
-            modal.style.width = viewportWidth + 'px';
-            modal.style.height = viewportHeight + 'px';
-            modal.style.margin = '0';
-            modal.style.padding = '0';
-            modal.style.background = 'rgba(0, 0, 0, 0.5)';
-            modal.style.zIndex = '99999';
-            modal.style.display = 'table';
-            modal.style.tableLayout = 'fixed';
-
-            const centerCell = document.createElement('div');
-            centerCell.style.display = 'table-cell';
-            centerCell.style.verticalAlign = 'middle';
-            centerCell.style.textAlign = 'center';
-            centerCell.style.padding = '20px';
-
-            const panel = document.createElement('div');
-            panel.style.cssText = `
-                background: #ffffff;
-                border: 2px outset #c0c0c0;
-                box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
-                width: 400px;
-                max-width: 90%;
-                max-height: 70vh;
-                overflow-y: auto;
-                font-family: 'MS Sans Serif', sans-serif;
-                font-size: 12px;
-                border-radius: 0;
-                margin: 0 auto;
-                display: inline-block;
-                text-align: left;
-            `;
-
-            const header = document.createElement('div');
-            header.style.cssText = `
-                background: ${color};
-                color: white;
-                padding: 8px 12px;
-                font-weight: bold;
-                font-size: 13px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            `;
-            header.innerHTML = `
-                <span>${title}</span>
-                <button onclick="closeTestResultModal()" style="
-                    background: none;
-                    border: none;
-                    color: white;
-                    font-size: 18px;
-                    cursor: pointer;
-                    padding: 0;
-                    width: 24px;
-                    height: 24px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                ">×</button>
-            `;
-
-            const body = document.createElement('div');
-            body.style.cssText = `
-                padding: 20px;
-                line-height: 1.6;
-                color: #333;
-                white-space: pre-line;
-                font-size: 13px;
-                max-height: 300px;
-                overflow-y: auto;
-            `;
-            body.textContent = content;
-
-            const footer = document.createElement('div');
-            footer.style.cssText = `
-                padding: 12px 20px;
-                text-align: center;
-                border-top: 1px solid #e0e0e0;
-                background: #f9f9f9;
-            `;
-            footer.innerHTML = `
-                <button onclick="closeTestResultModal()" style="
-                    background: ${color};
-                    color: white;
-                    border: none;
-                    padding: 8px 16px;
-                    font-size: 12px;
-                    cursor: pointer;
-                    border-radius: 3px;
-                ">确定</button>
-            `;
-
-            panel.appendChild(header);
-            panel.appendChild(body);
-            panel.appendChild(footer);
-            centerCell.appendChild(panel);
-            modal.appendChild(centerCell);
-
-            // 直接添加到body最前面
-            document.body.insertBefore(modal, document.body.firstChild);
-
-            // 防止页面滚动和其他交互
-            document.body.style.overflow = 'hidden';
-            
-            // 防止点击模态背景关闭
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal || e.target === centerCell) {
-                    closeTestResultModal();
-                }
-            });
-
-            // 调试信息
-            console.log('模态弹窗已创建:', {
-                viewportWidth: viewportWidth,
-                viewportHeight: viewportHeight,
-                modalElement: modal
-            });
-        }
-
-        // 关闭测试结果模态弹窗
-        function closeTestResultModal() {
-            const modal = document.getElementById('test-result-modal');
-            if (modal) {
-                modal.remove();
-                document.body.style.overflow = '';
-            }
-        }
-
         // 简单可靠的弹窗函数
+
         function showSimpleAlert(message) {
             // 移除已存在的简单弹窗
             const existingAlert = document.getElementById('simple-alert');

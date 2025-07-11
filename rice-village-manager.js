@@ -3435,12 +3435,13 @@ RiceVillageManager.prototype.renderMonstersTable = function() {
 
         // 检查董虎是否需要任务激活 - 按照重建指导文档规则
         if (monsterName === '董虎') {
-            const hasDonghuQuest = this.hasActiveQuestFromNPC(NPC_NAMES.LIU_YANG, 'defeat_donghu');
+            const donghuQuest = this.hasActiveQuestFromNPC(NPC_NAMES.LIU_YANG, 'defeat_donghu');
+            const hasDonghuQuest = !!donghuQuest; // 转换为布尔值
             if (!hasDonghuQuest) {
                 buttonDisabled = 'disabled';
-                console.log(`🚫 董虎需要任务激活才能攻击`);
+                console.log(`🚫 董虎需要任务激活才能攻击，当前任务:`, donghuQuest);
             } else {
-                console.log(`✅ 董虎任务已激活，可以攻击`);
+                console.log(`✅ 董虎任务已激活，可以攻击，任务:`, donghuQuest);
             }
         }
 
