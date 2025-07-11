@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扬州城 - 统一版本</title>
+    <link rel="stylesheet" href="unified-styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 页面标题 -->
+        <div class="header">
+            <h1>扬州城 - RPG冒险模式</h1>
+            <div class="subtitle">统一版本 v2.0 | 数据完全同步</div>
+        </div>
+
+        <!-- 导航栏 -->
+        <div class="nav-bar">
+            <button class="nav-btn" onclick="goToTeaShop()">返回茶铺</button>
+            <button class="nav-btn" onclick="showInventory()" style="background: #666; color: white;">背包</button>
+            <button class="nav-btn" onclick="showPartnerSelection()" style="background: #666; color: white;">选择伙伴</button>
+        </div>
+
+        <!-- 天气时间信息栏 -->
+        <div class="weather-info-bar" style="background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: center; align-items: center; gap: 20px;">
+            <div class="weather-display" style="display: flex; align-items: center; gap: 8px;">
+                <span id="yangzhou-season-text" style="font-weight: 600; color: #333;">扬州城</span>
+            </div>
+            <div class="day-display" style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: #666;">第</span>
+                <span id="yangzhou-day-number" style="font-weight: 600; color: #333;">1</span>
+                <span style="color: #666;">天</span>
+            </div>
+        </div>
+
+        <!-- 角色状态栏 -->
+        <div class="section">
+            <div class="section-title">角色状态</div>
+            <table class="status-table">
+                <tr>
+                    <th>姓名</th>
+                    <th>性别</th>
+                    <th>等级</th>
+                    <th>经验</th>
+                    <th>金币</th>
+                    <th>攻击力</th>
+                    <th>当前伙伴</th>
+                </tr>
+                <tr>
+                    <td id="player-name">未知</td>
+                    <td id="player-gender">未知</td>
+                    <td id="player-level">1</td>
+                    <td id="player-exp">0</td>
+                    <td id="player-funds">0</td>
+                    <td id="player-attack">5</td>
+                    <td id="current-partner">无</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 主要内容区域 -->
+        <div class="main-content">
+            <!-- NPC区域 -->
+            <div class="section">
+                <div class="section-title">NPC状态</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>NPC</th>
+                            <th>状态</th>
+                            <th>任务阶段</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="npcs-table">
+                        <!-- NPC数据将通过JavaScript动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 怪物区域 -->
+            <div class="section">
+                <div class="section-title">怪物状态</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>怪物</th>
+                            <th>描述</th>
+                            <th>掉落</th>
+                            <th>血量</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monsters-table">
+                        <!-- 怪物数据将通过JavaScript动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 植物区域 -->
+            <div class="section">
+                <div class="section-title">植物状态</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>植物</th>
+                            <th>描述</th>
+                            <th>掉落</th>
+                            <th>拥有数量</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="plants-table">
+                        <!-- 植物数据将通过JavaScript动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 任务区域 -->
+            <div class="section">
+                <div class="section-title">当前任务</div>
+                <div id="quest-display" class="quest-display">
+                    <div class="quest-item">
+                        <div class="quest-name">暂无任务</div>
+                        <div class="quest-description">请与NPC对话接取任务</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 对话框 -->
+        <div id="dialog-box" class="dialog-box" style="display: none;">
+            <div class="dialog-content">
+                <div class="dialog-header">
+                    <span id="dialog-npc-name">NPC</span>
+                    <button onclick="closeDialog()" class="close-btn">关闭</button>
+                </div>
+                <div class="dialog-body">
+                    <div id="dialog-messages" class="dialog-messages"></div>
+                    <div class="dialog-actions">
+                        <button id="dialog-action-btn" onclick="handleDialogAction()" class="action-btn">对话</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框容器 -->
+    <div id="modal-container"></div>
+
+    <!-- 引入核心系统 -->
+    <script src="unified-core-system.js"></script>
+    <script src="unified-inventory-system.js"></script>
+    <script src="unified-weather-system.js"></script>
+    <script src="yangzhou-manager.js"></script>
+
+    <script>
+        // 全局变量
+        let yangzhouManager = null;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🏛️ 扬州城页面DOM加载完成');
+
+            // 等待全局核心系统
+            const checkCoreInterval = setInterval(() => {
+                if (window.core && window.core.initialized) {
+                    clearInterval(checkCoreInterval);
+                    console.log('✅ 全局核心系统已就绪，开始初始化扬州城');
+                    initializeYangzhouPage();
+                }
+            }, 100);
+        });
+
+        // 初始化扬州城页面
+        function initializeYangzhouPage() {
+            try {
+                console.log('🏛️ 开始初始化扬州城管理器...');
+
+                if (window.YangzhouManager && window.core) {
+                    yangzhouManager = new YangzhouManager(window.core);
+                    yangzhouManager.initialize();
+                    window.yangzhouManager = yangzhouManager;
+                    console.log('✅ 扬州城管理器初始化完成');
+                } else {
+                    console.error('❌ 扬州城管理器类或核心系统未找到');
+                }
+            } catch (error) {
+                console.error('❌ 扬州城页面初始化失败:', error);
+            }
+        }
+
+        // 返回茶铺函数
+        function goToTeaShop() {
+            // 保存当前数据
+            if (window.core) {
+                window.core.saveGameData();
+            }
+            // 跳转到茶铺
+            window.location.href = 'index.html';
+        }
+
+        // 显示背包界面
+        function showInventory() {
+            console.log('🎒 扬州城显示背包');
+
+            if (!window.core || !window.core.inventorySystem) {
+                alert('背包系统未初始化，请刷新页面');
+                return;
+            }
+
+            const inventory = window.core.inventorySystem.getAllItems();
+
+            let modalContent = `
+                <div class="modal-overlay" onclick="closeInventoryModal()">
+                    <div class="modal-content" onclick="event.stopPropagation()">
+                        <div class="modal-header">
+                            <span>背包 - 扬州城</span>
+                            <button class="modal-close" onclick="closeInventoryModal()">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="top-menu-bar">
+                                <button class="menu-btn" onclick="showInventoryCategory('all')">全部</button>
+                                <button class="menu-btn" onclick="showInventoryCategory('seeds')">种子</button>
+                                <button class="menu-btn" onclick="showInventoryCategory('ingredients')">原料</button>
+                                <button class="menu-btn" onclick="showInventoryCategory('toppings')">小料</button>
+                                <button class="menu-btn" onclick="showInventoryCategory('teas')">茶饮</button>
+                            </div>
+                            <div id="inventory-content">
+                                ${generateInventoryContent('all', inventory)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modal-container').innerHTML = modalContent;
+        }
+
+        // 关闭背包模态框
+        function closeInventoryModal() {
+            document.getElementById('modal-container').innerHTML = '';
+        }
+
+        // 显示背包分类
+        function showInventoryCategory(category) {
+            if (!window.core) return;
+
+            const inventory = window.core.inventorySystem.getAllItems();
+            const content = generateInventoryContent(category, inventory);
+            document.getElementById('inventory-content').innerHTML = content;
+        }
+
+        // 生成背包内容
+        function generateInventoryContent(category, inventory) {
+            let content = '<div class="inventory-grid">';
+
+            const categories = {
+                'all': ['seeds', 'teaIngredients', 'meatIngredients', 'toppings', 'madeTeas', 'questItems', 'specialItems'],
+                'seeds': ['seeds'],
+                'ingredients': ['teaIngredients', 'meatIngredients'],
+                'toppings': ['toppings'],
+                'teas': ['madeTeas']
+            };
+
+            const targetCategories = categories[category] || categories['all'];
+
+            targetCategories.forEach(cat => {
+                const items = inventory[cat] || {};
+                for (const [itemName, count] of Object.entries(items)) {
+                    if (count > 0) {
+                        content += `
+                            <div class="inventory-item">
+                                <div class="item-name">${itemName}</div>
+                                <div class="item-count">x${count}</div>
+                            </div>
+                        `;
+                    }
+                }
+            });
+
+            content += '</div>';
+            return content;
+        }
+
+        // 显示伙伴选择界面
+        function showPartnerSelection() {
+            alert('伙伴选择功能开发中...');
+        }
+
+        // 关闭对话框
+        function closeDialog() {
+            document.getElementById('dialog-box').style.display = 'none';
+        }
+
+        // 处理对话动作
+        function handleDialogAction() {
+            if (window.yangzhouManager) {
+                window.yangzhouManager.handleDialogAction();
+            }
+        }
+
+        // 与NPC对话
+        function talkToNPC(npcName) {
+            if (window.yangzhouManager) {
+                window.yangzhouManager.talkToNPC(npcName);
+            }
+        }
+
+        // 攻击怪物
+        function attackMonster(monsterName) {
+            if (window.yangzhouManager) {
+                window.yangzhouManager.attackMonster(monsterName);
+            }
+        }
+
+        // 采集植物
+        function collectPlant(plantName) {
+            if (window.yangzhouManager) {
+                window.yangzhouManager.collectPlant(plantName);
+            }
+        }
+    </script>
+</body>
+</html>
+
+<body>
+    <div class="container">
+        <!-- 页面标题 -->
+        <div class="header">
+            <h1>扬州城 - RPG冒险模式</h1>
+            <div class="subtitle">统一版本 v2.0 | 数据完全同步</div>
+        </div>
+
+        <!-- 导航栏 -->
+        <div class="nav-bar">
+            <button class="nav-btn" onclick="goToTeaShop()">返回茶铺</button>
+            <button class="nav-btn" onclick="showInventory()" style="background: #666; color: white;">背包</button>
+            <button class="nav-btn" onclick="showPartnerSelection()" style="background: #666; color: white;">选择伙伴</button>
+        </div>
+
+        <!-- 天气时间信息栏 - 统一天气系统 -->
+        <div class="weather-info-bar" style="background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: center; align-items: center; gap: 20px;">
+            <div class="weather-display" style="display: flex; align-items: center; gap: 8px;">
+                <span id="yangzhou-season-text" style="font-weight: 600; color: #333;">扬州城</span>
+            </div>
+            <div class="day-display" style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: #666;">第</span>
+                <span id="yangzhou-day-number" style="font-weight: 600; color: #333;">1</span>
+                <span style="color: #666;">天</span>
+            </div>
+        </div>
+
+        <!-- 角色状态栏 -->
+        <div class="section">
+            <div class="section-title">角色状态</div>
+            <table class="status-table">
+                <tr>
+                    <th>姓名</th>
+                    <th>性别</th>
+                    <th>等级</th>
+                    <th>经验</th>
+                    <th>金币</th>
+                    <th>攻击力</th>
+                    <th>当前伙伴</th>
+                </tr>
+                <tr>
+                    <td id="player-name">未知</td>
+                    <td id="player-gender">未知</td>
+                    <td id="player-level">1</td>
+                    <td id="player-exp">0</td>
+                    <td id="player-funds">0</td>
+                    <td id="player-attack">5</td>
+                    <td id="current-partner">无</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 主要内容区域 -->
+        <div class="main-content">
+            <!-- NPC区域 -->
+            <div class="section">
+                <div class="section-title">NPC状态</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>NPC</th>
+                            <th>状态</th>
+                            <th>任务阶段</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="npcs-table">
+                        <!-- NPC数据将通过JavaScript动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 怪物区域 -->
+            <div class="section">
+                <div class="section-title">怪物状态</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>怪物</th>
+                            <th>描述</th>
+                            <th>掉落</th>
+                            <th>血量</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monsters-table">
+                        <!-- 怪物数据将通过JavaScript动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 植物区域 -->
+            <div class="section">
+                <div class="section-title">植物状态</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>植物</th>
+                            <th>描述</th>
+                            <th>掉落</th>
+                            <th>拥有数量</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="plants-table">
+                        <!-- 植物数据将通过JavaScript动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 任务区域 -->
+            <div class="section">
+                <div class="section-title">当前任务</div>
+                <div id="quest-display" class="quest-display">
+                    <div class="quest-item">
+                        <div class="quest-name">暂无任务</div>
+                        <div class="quest-description">请与NPC对话接取任务</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 对话框 -->
+        <div id="dialog-box" class="dialog-box" style="display: none;">
+            <div class="dialog-content">
+                <div class="dialog-header">
+                    <span id="dialog-npc-name">NPC</span>
+                    <button onclick="closeDialog()" class="close-btn">关闭</button>
+                </div>
+                <div class="dialog-body">
+                    <div id="dialog-messages" class="dialog-messages"></div>
+                    <div class="dialog-actions">
+                        <button id="dialog-action-btn" onclick="handleDialogAction()" class="action-btn">对话</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框容器 -->
+    <div id="modal-container"></div>
+
+    <!-- 引入核心系统 -->
+    <script src="unified-core-system.js"></script>
+    <script src="unified-inventory-system.js"></script>
+    <script src="unified-weather-system.js"></script>
+    <script src="yangzhou-manager.js"></script>
+
+    <script>
+        // 全局变量
+        let yangzhouManager = null;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('扬州城页面开始初始化...');
+
+            // 等待核心系统加载
+            const initInterval = setInterval(() => {
+                if (window.UnifiedCoreSystem) {
+                    clearInterval(initInterval);
+                    initializeYangzhouPage();
+                }
+            }, 100);
+        });
+
+        // 初始化扬州城页面
+        function initializeYangzhouPage() {
+            try {
+                console.log('🏛️ 扬州城页面开始初始化...');
+
+                // 检查是否已有全局核心系统实例
+                if (window.core && window.core.initialized) {
+                    console.log('✅ 发现已初始化的全局核心系统，直接使用');
+                    initializeYangzhouManager(window.core);
+                } else {
+                    console.log('⏳ 等待全局核心系统初始化...');
+                    // 等待全局核心系统初始化
+                    const checkCoreInterval = setInterval(() => {
+                        if (window.core && window.core.initialized) {
+                            clearInterval(checkCoreInterval);
+                            console.log('✅ 全局核心系统已就绪，开始初始化扬州城管理器');
+                            initializeYangzhouManager(window.core);
+                        }
+                    }, 100);
+
+                    // 超时处理
+                    setTimeout(() => {
+                        if (!window.core || !window.core.initialized) {
+                            clearInterval(checkCoreInterval);
+                            console.error('❌ 等待全局核心系统超时，尝试创建新实例');
+                            createNewCoreSystem();
+                        }
+                    }, 10000);
+                }
+            } catch (error) {
+                console.error('❌ 扬州城页面初始化失败:', error);
+            }
+        }
+
+        // 初始化扬州城管理器
+        function initializeYangzhouManager(core) {
+            try {
+                if (window.YangzhouManager) {
+                    yangzhouManager = new YangzhouManager(core);
+                    yangzhouManager.initialize();
+                    window.yangzhouManager = yangzhouManager;
+                    console.log('✅ 扬州城管理器初始化完成');
+                } else {
+                    console.error('❌ 扬州城管理器类未找到');
+                }
+            } catch (error) {
+                console.error('❌ 扬州城管理器初始化失败:', error);
+            }
+        }
+
+        // 创建新的核心系统（备用方案）
+        function createNewCoreSystem() {
+            try {
+                console.log('🚀 创建新的核心系统实例...');
+                const core = new UnifiedCoreSystem();
+
+                core.initialize().then(() => {
+                    console.log('✅ 新核心系统初始化完成');
+                    window.core = core;
+                    initializeYangzhouManager(core);
+                }).catch(error => {
+                    console.error('❌ 新核心系统初始化失败:', error);
+                });
+            } catch (error) {
+                console.error('❌ 创建新核心系统失败:', error);
+            }
+        }
+
+        // 返回茶铺函数
+        function goToTeaShop() {
+            // 保存当前数据
+            if (window.yangzhouManager && window.yangzhouManager.core) {
+                window.yangzhouManager.core.saveGameData();
+            }
+
+            // 跳转到茶铺
+            window.location.href = 'index.html';
+        }
+
+        // 显示背包界面 - 使用统一背包系统
+        function showInventory() {
+            console.log('🎒 扬州城显示背包');
+
+            if (!window.yangzhouManager || !window.yangzhouManager.core) {
+                alert('系统未初始化，请刷新页面');
+                return;
+            }
+
+            const core = window.yangzhouManager.core;
+            const inventory = core.inventorySystem.getAllItems();
+
+            let modalContent = `
+                <div class="modal-overlay" onclick="closeInventoryModal()">
+                    <div class="modal-content" onclick="event.stopPropagation()">
+                        <div class="modal-header">
+                            <span>背包 - 扬州城</span>
+                            <button class="modal-close" onclick="closeInventoryModal()">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="top-menu-bar">
+                                <button class="menu-btn" onclick="showInventoryCategory('all')">全部</button>
+                                <button class="menu-btn" onclick="showInventoryCategory('seeds')">种子</button>
+                                <button class="menu-btn" onclick="showInventoryCategory('ingredients')">原料</button>
+                                <button class="menu-btn" onclick="showInventoryCategory('toppings')">小料</button>
+                                <button class="menu-btn" onclick="showInventoryCategory('teas')">茶饮</button>
+                                <button class="menu-btn" onclick="showInventoryCategory('meats')">肉类</button>
+                            </div>
+                            <div id="inventory-content">
+                                ${generateInventoryContent('all', inventory)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modal-container').innerHTML = modalContent;
+        }
+
+        // 关闭背包模态框
+        function closeInventoryModal() {
+            const modalContainer = document.getElementById('modal-container');
+            if (modalContainer) {
+                modalContainer.innerHTML = '';
+            }
+        }
+
+        // 显示背包分类
+        function showInventoryCategory(category) {
+            if (!window.yangzhouManager || !window.yangzhouManager.core) return;
+
+            const inventory = window.yangzhouManager.core.inventorySystem.getAllItems();
+            const content = generateInventoryContent(category, inventory);
+            const contentElement = document.getElementById('inventory-content');
+            if (contentElement) {
+                contentElement.innerHTML = content;
+            }
+        }
+
+        // 生成背包内容
+        function generateInventoryContent(category, inventory) {
+            let content = '<div class="inventory-grid">';
+
+            const categories = {
+                'all': ['seeds', 'teaIngredients', 'meatIngredients', 'toppings', 'madeTeas', 'questItems', 'specialItems'],
+                'seeds': ['seeds'],
+                'ingredients': ['teaIngredients', 'meatIngredients'],
+                'toppings': ['toppings'],
+                'teas': ['madeTeas'],
+                'meats': ['meatIngredients']
+            };
+
+            const targetCategories = categories[category] || categories['all'];
+
+            targetCategories.forEach(cat => {
+                const items = inventory[cat] || {};
+                for (const [itemName, count] of Object.entries(items)) {
+                    if (count > 0) {
+                        content += `
+                            <div class="inventory-item">
+                                <div class="item-name">${itemName}</div>
+                                <div class="item-count">x${count}</div>
+                            </div>
+                        `;
+                    }
+                }
+            });
+
+            content += '</div>';
+            return content;
+        }
+
+        // 显示伙伴选择界面
+        function showPartnerSelection() {
+            if (window.yangzhouManager && window.yangzhouManager.showPartnerSelection) {
+                window.yangzhouManager.showPartnerSelection();
+            } else {
+                alert('伙伴系统未初始化，请刷新页面');
+            }
+        }
+
+        // 关闭对话框
+        function closeDialog() {
+            const dialogBox = document.getElementById('dialog-box');
+            if (dialogBox) {
+                dialogBox.style.display = 'none';
+            }
+        }
+
+        // 处理对话动作
+        function handleDialogAction() {
+            if (window.yangzhouManager && window.yangzhouManager.handleDialogAction) {
+                window.yangzhouManager.handleDialogAction();
+            }
+        }
+
+        // 攻击怪物
+        function attackMonster(monsterName) {
+            if (window.yangzhouManager && window.yangzhouManager.attackMonster) {
+                window.yangzhouManager.attackMonster(monsterName);
+            } else {
+                alert('战斗系统未初始化，请刷新页面');
+            }
+        }
+
+        // 采集植物
+        function collectPlant(plantName) {
+            if (window.yangzhouManager && window.yangzhouManager.collectPlant) {
+                window.yangzhouManager.collectPlant(plantName);
+            } else {
+                alert('采集系统未初始化，请刷新页面');
+            }
+        }
+
+        // 与NPC对话
+        function talkToNPC(npcName) {
+            if (window.yangzhouManager && window.yangzhouManager.talkToNPC) {
+                window.yangzhouManager.talkToNPC(npcName);
+            } else {
+                alert('对话系统未初始化，请刷新页面');
+            }
+        }
+    </script>
+</body>
+</html>
