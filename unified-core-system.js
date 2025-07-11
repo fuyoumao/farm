@@ -36,8 +36,8 @@ class UnifiedCoreSystem {
                     basePower: 5
                 },
                 equipment: {
-                    weapon: null,
-                    armor: null
+                    weapon: null,  // 武器槽
+                    armor: null    // 防具槽
                 }
             },
             
@@ -193,7 +193,8 @@ class UnifiedCoreSystem {
                     '少侠': { questStage: 0, lastTalkTime: 0, profession: '刘大海的徒弟' },
                     '刘洋': { questStage: 0, lastTalkTime: 0, profession: '村长' },
                     '王婆婆': { questStage: 0, lastTalkTime: 0, profession: '村头婆婆（凌雪阁）' },
-                    '武器铺老板': { questStage: 0, lastTalkTime: 0, profession: '武器商人' }
+                    '武器铺老板': { questStage: 0, lastTalkTime: 0, profession: '武器商人' },
+                    '秋叶青': { questStage: 0, lastTalkTime: 0, profession: '秋家大小姐' }
                 },
                 
                 // 怪物系统
@@ -202,6 +203,7 @@ class UnifiedCoreSystem {
                     '果子狸': { hp: 10, maxHp: 10, attack: 1, available: true, lastKillTime: 0 },
                     '猴子': { hp: 15, maxHp: 15, attack: 2, available: true, lastKillTime: 0 },
                     '山贼': { hp: 25, maxHp: 25, attack: 5, available: true, lastKillTime: 0 },
+                    '可疑的山贼': { hp: 25, maxHp: 25, attack: 5, available: true, lastKillTime: 0 },
                     '野猪': { hp: 20, maxHp: 20, attack: 3, available: true, lastKillTime: 0 }
                 },
                 
@@ -209,6 +211,7 @@ class UnifiedCoreSystem {
                 plants: {
                     '止血草': { available: true, lastGatherTime: 0, respawnTime: 3000 },
                     '野菜': { available: true, lastGatherTime: 0, respawnTime: 3000 },
+                    '野花': { available: true, lastGatherTime: 0, respawnTime: 3000 },
                     '乌梅': { available: true, lastGatherTime: 0, respawnTime: 15000 },
                     '山楂': { available: true, lastGatherTime: 0, respawnTime: 15000 }
                 },
@@ -714,12 +717,14 @@ class UnifiedCoreSystem {
                     '果子狸': { hp: 10, maxHp: 10, attack: 1, available: true, lastKillTime: 0 },
                     '猴子': { hp: 15, maxHp: 15, attack: 2, available: true, lastKillTime: 0 },
                     '山贼': { hp: 25, maxHp: 25, attack: 5, available: true, lastKillTime: 0 },
+                    '可疑的山贼': { hp: 25, maxHp: 25, attack: 5, available: true, lastKillTime: 0 },
                     '野猪': { hp: 20, maxHp: 20, attack: 3, available: true, lastKillTime: 0 }
                 },
 
                 plants: {
                     '止血草': { available: true, lastGatherTime: 0, respawnTime: 3000 },
                     '野菜': { available: true, lastGatherTime: 0, respawnTime: 3000 },
+                    '野花': { available: true, lastGatherTime: 0, respawnTime: 3000 },
                     '乌梅': { available: true, lastGatherTime: 0, respawnTime: 15000 },
                     '山楂': { available: true, lastGatherTime: 0, respawnTime: 15000 }
                 },

@@ -77,6 +77,12 @@ const MONSTER_CONFIGS = {
         description: '危险的敌人，极具攻击性',
         drops: '钱袋(50%), 破旧武器(30%)'
     },
+    '可疑的山贼': {
+        name: '可疑的山贼',
+        type: 'LARGE_ACTIVE',
+        description: '行为诡异的山贼，实力与普通山贼相当',
+        drops: '钱袋(50%), 破旧武器(30%)'
+    },
     '董虎': {
         name: '董虎',
         type: 'BOSS_ACTIVE',
@@ -243,7 +249,9 @@ const NPC_NAMES = {
     SHAOXIA: '少侠',
     LI_FU: '李复',
     CHEN_YUE: '陈月',
-    WANG_FU: '王富'
+    WANG_FU: '王富',
+    QIU_YE_QING: '秋叶青',
+    WEAPON_SHOP_OWNER: '武器铺老板'
 };
 
 const ERROR_MESSAGES = {
@@ -276,6 +284,11 @@ const PLANT_CONFIGS = {
         name: '山楂木',
         description: '坚硬的木材，用于任务',
         category: 'teaIngredients'
+    },
+    '野花': {
+        name: '野花',
+        description: '美丽的野花，用于任务',
+        category: 'questItems'
     },
     '山楂': {
         name: '山楂',
@@ -398,8 +411,16 @@ RiceVillageManager.prototype._initializeRiceVillageData = function() {
             [NPC_NAMES.WANG_POPO]: { questStage: 0 },
             [NPC_NAMES.SHAOXIA]: { questStage: 0 },
             [NPC_NAMES.LI_FU]: { questStage: 0 },
-            [NPC_NAMES.CHEN_YUE]: { questStage: 0 }
+            [NPC_NAMES.CHEN_YUE]: { questStage: 0 },
+            [NPC_NAMES.QIU_YE_QING]: { questStage: 0 },
+            [NPC_NAMES.WEAPON_SHOP_OWNER]: { questStage: 0 }
         };
+    }
+    
+    // 兼容性检查：确保武器铺老板存在（为老存档添加）
+    if (!gameData.riceVillage.npcs[NPC_NAMES.WEAPON_SHOP_OWNER]) {
+        gameData.riceVillage.npcs[NPC_NAMES.WEAPON_SHOP_OWNER] = { questStage: 0 };
+        console.log('🔧 兼容性更新：为老存档添加武器铺老板NPC');
     }
     
     // 初始化击杀计数
@@ -448,6 +469,7 @@ RiceVillageManager.prototype._initializeUI = function() {
             this.renderPlantsTable();
             this.updateQuestDisplay();
             this.updatePlayerStatus();
+            this.updatePlayerStats(); // 确保装备属性在初始化时正确应用
             
             // 检查是否已解锁扬州地图，如果是则显示按钮
             const gameData = this.core.gameData;
@@ -560,6 +582,18 @@ RiceVillageManager.prototype.createCharacter = function() {
     player.stamina = 100;  // 新角色体力
     player.maxStamina = 100;
     player.power = 5;      // 新角色攻击力
+    
+    // 🔧 确保stats系统正确初始化
+    if (!player.stats) {
+        player.stats = {
+            hp: 100,
+            maxHp: 100,
+            stamina: 100,
+            maxStamina: 100,
+            power: 5,
+            basePower: 5
+        };
+    }
 
     if (!player.funds) {
         player.funds = 1000; // 如果没有金币，给予初始金币
@@ -581,6 +615,9 @@ RiceVillageManager.prototype.createCharacter = function() {
     // 保存数据
     this.core.saveGameData();
 
+    // 确保属性正确计算（包含升级加成）
+    this.updatePlayerStats();
+    
     // 立即更新界面显示
     this.updatePlayerStatus();
 
@@ -771,6 +808,9 @@ RiceVillageManager.prototype.selectPartner = function(catId, type) {
     // 保存数据
     this.core.saveGameData();
 
+    // 确保属性正确计算（包含升级加成）
+    this.updatePlayerStats();
+    
     // 更新界面显示
     this.updatePlayerStatus();
 
@@ -811,6 +851,22 @@ RiceVillageManager.prototype.createInventoryPanel = function() {
     `;
 
     panel.innerHTML = `
+        <style>
+            #inventory-content::-webkit-scrollbar {
+                width: 8px;
+            }
+            #inventory-content::-webkit-scrollbar-track {
+                background: #f3f4f6;
+                border-radius: 4px;
+            }
+            #inventory-content::-webkit-scrollbar-thumb {
+                background: #9ca3af;
+                border-radius: 4px;
+            }
+            #inventory-content::-webkit-scrollbar-thumb:hover {
+                background: #6b7280;
+            }
+        </style>
         <div style="padding: 8px 12px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; cursor: move;" id="inventory-header">
             <span style="font-weight: bold; font-size: 12px;">📦 背包</span>
             <button onclick="riceVillageManager.closeInventory()" style="background: none; border: none; font-size: 16px; cursor: pointer; color: #6b7280;">×</button>
@@ -821,8 +877,9 @@ RiceVillageManager.prototype.createInventoryPanel = function() {
                 <button class="inventory-tab" onclick="riceVillageManager.showInventoryTab('madeTeas')" style="flex: 1; padding: 4px 8px; border: none; background: #e5e7eb; font-size: 10px; cursor: pointer;">🍵茶饮</button>
                 <button class="inventory-tab" onclick="riceVillageManager.showInventoryTab('huntingItems')" style="flex: 1; padding: 4px 8px; border: none; background: #e5e7eb; font-size: 10px; cursor: pointer;">🥩肉类</button>
                 <button class="inventory-tab" onclick="riceVillageManager.showInventoryTab('questItems')" style="flex: 1; padding: 4px 8px; border: none; background: #e5e7eb; font-size: 10px; cursor: pointer;">📋任务</button>
+                <button class="inventory-tab" onclick="riceVillageManager.showInventoryTab('equipment')" style="flex: 1; padding: 4px 8px; border: none; background: #e5e7eb; font-size: 10px; cursor: pointer;">⚔️装备</button>
             </div>
-            <div id="inventory-content" style="max-height: 350px; overflow-y: auto; font-size: 11px;"></div>
+            <div id="inventory-content" style="max-height: 350px; overflow-y: auto; font-size: 11px; scrollbar-width: auto; scrollbar-color: #9ca3af #f3f4f6;"></div>
         </div>
     `;
 
@@ -969,7 +1026,8 @@ RiceVillageManager.prototype.updateInventoryDisplay = function(category) {
         'teaIngredients': 'teaIngredients',
         'madeTeas': 'madeTeas',
         'huntingItems': 'meatIngredients',  // 关键修复：映射到正确的分类
-        'questItems': 'questItems'
+        'questItems': 'questItems',
+        'equipment': 'equipment'  // 添加装备分类映射
     };
 
     const unifiedCategory = categoryMapping[category] || category;
@@ -988,6 +1046,44 @@ RiceVillageManager.prototype.updateInventoryDisplay = function(category) {
                     <div class="inventory-item" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px; font-size: 10px; text-align: center;">
                         <div style="font-weight: bold; margin-bottom: 4px;">${tea.name}</div>
                         <div style="color: #6b7280; font-size: 9px;">${tea.temperature === 'hot' ? '🔥热饮' : '🧊冷饮'}</div>
+                    </div>
+                `;
+            });
+        }
+    } else if (category === 'equipment') {
+        // 装备特殊处理（数组形式）
+        const equipmentItems = inventory.equipment || [];
+        if (equipmentItems.length === 0) {
+            itemsHTML += '<p style="grid-column: 1 / -1; text-align: center; color: #6b7280; font-size: 11px;">暂无装备</p>';
+        } else {
+            equipmentItems.forEach((equipment, index) => {
+                // 根据装备类型设置图标
+                let icon = '⚔️'; // 默认武器图标
+                if (equipment.category === 'armor' || equipment.type === 'armor') {
+                    icon = '🛡️';
+                }
+                
+                // 获取装备属性
+                const attack = equipment.attack || 0;
+                const defense = equipment.defense || 0;
+                const attributeText = attack > 0 ? `攻击+${attack}` : defense > 0 ? `防御+${defense}` : '无属性';
+                
+                // 检查是否已装备
+                const playerEquipment = this.core.gameData.player.equipment;
+                const equipmentType = equipment.category === 'armor' || equipment.type === 'armor' ? 'armor' : 'weapon';
+                const isEquipped = playerEquipment[equipmentType] && String(playerEquipment[equipmentType].id) === String(equipment.id);
+                
+                const actionButton = isEquipped 
+                    ? `<button onclick="riceVillageManager.unequipItem('${equipment.id}', '${equipmentType}')" style="margin-top: 4px; padding: 2px 6px; font-size: 8px; background: #ef4444; color: white; border: none; border-radius: 2px; cursor: pointer;">脱下</button>`
+                    : `<button onclick="riceVillageManager.equipItem('${equipment.id}', '${equipmentType}')" style="margin-top: 4px; padding: 2px 6px; font-size: 8px; background: #059669; color: white; border: none; border-radius: 2px; cursor: pointer;">装备</button>`;
+                
+                itemsHTML += `
+                    <div class="inventory-item" style="background: ${isEquipped ? '#fef3c7' : '#f9fafb'}; border: 1px solid ${isEquipped ? '#f59e0b' : '#e5e7eb'}; border-radius: 4px; padding: 8px; font-size: 10px; text-align: center;">
+                        <div style="font-size: 16px; margin-bottom: 4px;">${icon}</div>
+                        <div style="font-weight: bold; margin-bottom: 2px;">${equipment.name}</div>
+                        <div style="color: #6b7280; font-size: 9px;">${attributeText}</div>
+                        <div style="color: ${isEquipped ? '#f59e0b' : '#059669'}; font-size: 8px; margin-top: 2px;">${isEquipped ? '已装备' : '未装备'}</div>
+                        ${actionButton}
                     </div>
                 `;
             });
@@ -1089,10 +1185,152 @@ RiceVillageManager.prototype.refreshInventoryDisplay = function() {
         currentCategory = 'huntingItems';
     } else if (onclickStr.includes('questItems')) {
         currentCategory = 'questItems';
+    } else if (onclickStr.includes('equipment')) {
+        currentCategory = 'equipment';
     }
 
     console.log('📦 刷新背包显示:', currentCategory);
     this.updateInventoryDisplay(currentCategory);
+};
+
+/**
+ * 装备物品
+ * @param {string} equipmentId - 装备ID
+ * @param {string} equipmentType - 装备类型 (weapon | armor)
+ */
+RiceVillageManager.prototype.equipItem = function(equipmentId, equipmentType) {
+    if (!this._validateSystem()) return;
+
+    const inventory = this.core.gameData.inventory;
+    const playerEquipment = this.core.gameData.player.equipment;
+    
+    // 查找要装备的物品
+    console.log('🔍 查找装备:', equipmentId, '类型:', typeof equipmentId);
+    console.log('📦 当前背包装备:', inventory.equipment.map(item => ({ id: item.id, name: item.name, idType: typeof item.id })));
+    
+    const equipment = inventory.equipment.find(item => String(item.id) === String(equipmentId));
+    if (!equipment) {
+        console.error('❌ 找不到装备:', equipmentId);
+        console.error('📦 可用装备ID列表:', inventory.equipment.map(item => item.id));
+        return;
+    }
+
+    // 如果已有同类型装备，先脱下
+    if (playerEquipment[equipmentType]) {
+        console.log(`🔄 替换现有装备: ${playerEquipment[equipmentType].name} → ${equipment.name}`);
+    }
+
+    // 装备新物品
+    playerEquipment[equipmentType] = {
+        id: equipment.id,
+        name: equipment.name,
+        attack: equipment.attack || 0,
+        defense: equipment.defense || 0,
+        category: equipment.category
+    };
+
+    // 更新玩家属性
+    this.updatePlayerStats();
+
+    console.log(`⚔️ 装备成功: ${equipment.name} (${equipmentType})`);
+    
+    // 刷新背包显示
+    this.refreshInventoryDisplay();
+    
+    // 更新角色状态显示
+    this.updatePlayerStatus();
+};
+
+/**
+ * 脱下装备
+ * @param {string} equipmentId - 装备ID
+ * @param {string} equipmentType - 装备类型 (weapon | armor)
+ */
+RiceVillageManager.prototype.unequipItem = function(equipmentId, equipmentType) {
+    if (!this._validateSystem()) return;
+
+    const playerEquipment = this.core.gameData.player.equipment;
+    
+    // 检查是否确实装备了该物品
+    if (!playerEquipment[equipmentType] || String(playerEquipment[equipmentType].id) !== String(equipmentId)) {
+        console.error('❌ 该装备未装备:', equipmentId);
+        return;
+    }
+
+    const equipmentName = playerEquipment[equipmentType].name;
+    
+    // 脱下装备
+    playerEquipment[equipmentType] = null;
+
+    // 更新玩家属性
+    this.updatePlayerStats();
+
+    console.log(`🎒 脱下装备: ${equipmentName} (${equipmentType})`);
+    
+    // 刷新背包显示
+    this.refreshInventoryDisplay();
+    
+    // 更新角色状态显示
+    this.updatePlayerStatus();
+};
+
+/**
+ * 更新玩家属性（根据装备）
+ */
+RiceVillageManager.prototype.updatePlayerStats = function() {
+    if (!this._validateSystem()) return;
+
+    const player = this.core.gameData.player;
+    const equipment = player.equipment;
+    
+    // 🔧 修复：总是根据等级重新计算基础攻击力，不依赖可能错误的存储值
+    const calculatedBasePower = 5 + (player.level - 1) * 3;
+    player.stats.basePower = calculatedBasePower; // 更新存储的基础攻击力
+    player.stats.power = calculatedBasePower; // 设置当前攻击力为基础攻击力
+    
+    console.log(`⚔️ 基础攻击力计算: 等级${player.level} = 5基础 + ${(player.level - 1) * 3}升级加成 = ${calculatedBasePower}`);
+    
+    // 添加武器攻击力
+    if (equipment.weapon) {
+        player.stats.power += equipment.weapon.attack || 0;
+        console.log(`⚔️ 武器加成: +${equipment.weapon.attack} 攻击力`);
+    }
+    
+    // 计算基础血量（100基础 + 每级+5血量）
+    const baseMaxHp = 100 + (player.level - 1) * 5;
+    
+    // 添加防具防御力（转换为血量加成）
+    if (equipment.armor) {
+        const defenseBonus = equipment.armor.defense || 0;
+        player.stats.maxHp = baseMaxHp + defenseBonus;
+        console.log(`🛡️ 血量计算: ${baseMaxHp}基础 + ${defenseBonus}防具 = ${player.stats.maxHp}`);
+    } else {
+        player.stats.maxHp = baseMaxHp; // 基础血量（包含升级加成）
+        console.log(`🛡️ 血量计算: ${baseMaxHp}基础（无防具加成）`);
+    }
+    
+    // 如果当前血量超过新的最大值，则设置为最大值
+    if (player.stats.hp > player.stats.maxHp) {
+        player.stats.hp = player.stats.maxHp;
+    }
+    
+    console.log(`📊 玩家属性更新: 攻击力=${player.stats.power}, 血量=${player.stats.hp}/${player.stats.maxHp}`);
+    
+    // 🔧 关键修复：同步数据到兼容结构，确保显示系统能读取到正确数值
+    player.power = player.stats.power;
+    player.maxHp = player.stats.maxHp;
+    player.hp = Math.min(player.stats.hp, player.stats.maxHp); // 确保当前血量不超过最大值
+    
+    console.log(`🔄 数据同步完成: player.power=${player.power}, player.hp=${player.hp}/${player.maxHp}`);
+    
+    // 触发属性更新事件（如果其他系统需要监听）
+    if (this.core.inventorySystem) {
+        this.core.inventorySystem.emit('playerStatsUpdated', {
+            power: player.stats.power,
+            hp: player.stats.hp,
+            maxHp: player.stats.maxHp
+        });
+    }
 };
 
 // 旧的背包函数已删除，现在使用统一背包系统 unifiedInventory.addItem()
@@ -1217,9 +1455,24 @@ RiceVillageManager.prototype.gainExp = function(amount) {
             leveledUp = true;
 
             // 按照重建指导文档：每级+5血量上限，+3基础攻击力
-            player.maxHp += 5;
-            player.hp = player.maxHp; // 升级回满血
-            player.power += 3;
+            // 🔧 修复：正确更新stats系统，确保与装备系统一致
+            if (!player.stats) {
+                player.stats = {
+                    hp: player.hp || 100,
+                    maxHp: player.maxHp || 100,
+                    stamina: player.stamina || 100,
+                    maxStamina: player.maxStamina || 100,
+                    power: player.power || 5,
+                    basePower: player.power || 5
+                };
+            }
+            
+            // 更新基础属性
+            player.stats.basePower += 3;
+            // 注意：不直接修改maxHp，让装备系统重新计算（包含升级+装备加成）
+            
+            // 兼容旧数据结构
+            player.power = player.stats.basePower;
 
             console.log(`🎉 升级到${player.level}级！血量上限+5，攻击力+3`);
 
@@ -1243,6 +1496,13 @@ RiceVillageManager.prototype.gainExp = function(amount) {
 
         // 猫咪升级
         this.upgradeCat();
+        
+        // 🔧 升级后重新计算装备属性（包含升级加成）
+        this.updatePlayerStats();
+        
+        // 🔧 升级回满血
+        player.stats.hp = player.stats.maxHp;
+        player.hp = player.stats.hp; // 兼容旧数据结构
     }
 
     // 更新显示
@@ -1624,6 +1884,12 @@ RiceVillageManager.prototype.talkToNPC = function(npcName) {
             break;
         case NPC_NAMES.WANG_FU:
             this.handleWangFuDialog();
+            break;
+        case NPC_NAMES.QIU_YE_QING:
+            this.handleQiuYeQingDialog();
+            break;
+        case NPC_NAMES.WEAPON_SHOP_OWNER:
+            this.handleWeaponShopDialog();
             break;
         default:
             this.showDialog(npcName, '你好！');
@@ -2067,7 +2333,72 @@ RiceVillageManager.prototype.handleLiFuDialog = function() {
     }
 
     const genderTitle = player.gender === 'male' ? '小哥' : '小妹';
-    this.showDialog(NPC_NAMES.LI_FU, `${genderTitle}，我是李复，专精轻功。有机会可以教你一些轻功技巧。`);
+    const npc = this.core.gameData.riceVillage.npcs[NPC_NAMES.LI_FU];
+
+    // 优先检查秋叶青的对话任务
+    const qiuyeqingDialogQuest = this.hasActiveQuestFromNPC(NPC_NAMES.QIU_YE_QING, 'nanzhi_nvr_xin');
+    if (qiuyeqingDialogQuest) {
+        // 完成秋叶青的难知女儿心任务
+        this.showDialog(NPC_NAMES.LI_FU, '罢了，你先去吧，容我想想。', [
+            { text: '传达秋叶青的话', action: 'complete_qiuyeqing_dialog_quest' },
+            { text: '稍后再说', action: 'close_dialog' }
+        ]);
+        return;
+    }
+
+    // 使用统一任务检查函数
+    const completableQuests = this.checkCompletableQuests(NPC_NAMES.LI_FU);
+
+    if (completableQuests.length > 0) {
+        // 有可提交的任务
+        const quest = completableQuests[0];
+        this.showDialog(NPC_NAMES.LI_FU, `${genderTitle}，你完成了"${quest.name}"任务。这是你的奖励。`, [
+            { text: '提交任务', action: 'submit_quest_to_npc' },
+            { text: '稍后再说', action: 'close_dialog' }
+        ]);
+        return;
+    }
+
+    // 检查是否已有李复的任务
+    if (this.hasActiveQuestFromNPC(NPC_NAMES.LI_FU)) {
+        this.showDialog(NPC_NAMES.LI_FU, `${genderTitle}，你的任务还在进行中。`);
+        return;
+    }
+
+    // 根据questStage发布新任务
+    // 重要：questStage只在任务提交后推进，不在对话时推进
+    switch (npc.questStage) {
+        case 0:
+            // 第一个任务：青衣女子
+            this.showDialog(NPC_NAMES.LI_FU, `${genderTitle}，小荷的死……不在棋局之中。究竟是何人所为？听说尸体是在瀑布之下发现的。这样看来，她或许看到了什么。你去小镜湖南岸大树下找一位青衣女子，问她今日见到对面的山崖发生了何事。`);
+            this.createNPCQuest(NPC_NAMES.LI_FU, 'qingyinvzi', '青衣女子', '去找青衣女子，询问她今日见到对面山崖发生了何事', QUEST_TYPES.PROVIDE_ITEM, '与秋叶青对话', 1, { exp: 180, gold: 20 });
+            // questStage保持0，等任务完成后才推进到1
+            break;
+
+        case 1:
+            // 第四个任务：理解心意（采集野花）
+            this.showDialog(NPC_NAMES.LI_FU, `${genderTitle}，她说这里没有胭脂水粉...算了，你去采些野花，我来想办法。`);
+            this.createNPCQuest(NPC_NAMES.LI_FU, 'lijie_xinyi', '理解心意', '为秋叶青采集野花，理解她的心意', QUEST_TYPES.COLLECT, '野花', 8, { exp: 280, gold: 40 });
+            // questStage保持1，等任务完成后才推进到2
+            break;
+
+        case 2:
+            // 第九个任务：纪念小荷（采集野花祭奠）
+            this.showDialog(NPC_NAMES.LI_FU, `${genderTitle}，小荷的事让我们都很难过。你去采集一些野花，让秋叶青拿去祭奠小荷吧。这样她的心情也会好一些。`);
+            this.createNPCQuest(NPC_NAMES.LI_FU, 'jinian_xiaohe', '纪念小荷', '采集野花，让秋叶青去祭奠小荷', QUEST_TYPES.COLLECT, '野花', 6, { exp: 400, gold: 80 });
+            // questStage保持2，等任务完成后才推进到3
+            break;
+
+        case 3:
+            // 任务链完成，显示感谢对话
+            this.showDialog(NPC_NAMES.LI_FU, `${genderTitle}，谢谢你的帮助。有了你的协助，我和秋叶青之间的误会也解开了。`);
+            break;
+
+        default:
+            // 默认对话
+            this.showDialog(NPC_NAMES.LI_FU, `${genderTitle}，我是李复，专精轻功。有机会可以教你一些轻功技巧。`);
+            break;
+    }
 };
 
 /**
@@ -2084,6 +2415,117 @@ RiceVillageManager.prototype.handleChenYueDialog = function() {
 
     const genderTitle = player.gender === 'male' ? '小哥' : '小妹';
     this.showDialog(NPC_NAMES.CHEN_YUE, `${genderTitle}，我是陈月。村里有了你的茶铺，生活变得更有趣了。`);
+};
+
+/**
+ * 🏪 武器铺老板对话处理 - 商店系统
+ */
+RiceVillageManager.prototype.handleWeaponShopDialog = function() {
+    if (!this._validateSystem()) return;
+
+    const player = this.core.gameData.player;
+    if (!player.characterCreated) {
+        this.showDialog(NPC_NAMES.WEAPON_SHOP_OWNER, '请先与刘大海完成角色创建。');
+        return;
+    }
+
+    const genderTitle = player.gender === 'male' ? '少侠' : '姑娘';
+    
+    // 欢迎对话，显示商店选项
+    this.showDialog(NPC_NAMES.WEAPON_SHOP_OWNER, `${genderTitle}，欢迎光临我的武器铺！我这里有各种武器装备，也收购一些稀有物品。你想要做什么？`, [
+        { text: '购买装备', action: 'open_weapon_shop' },
+        { text: '出售物品', action: 'open_sell_shop' },
+        { text: '查看背包', action: 'show_inventory' },
+        { text: '离开', action: 'close_dialog' }
+    ]);
+};
+
+/**
+ * 秋叶青对话处理
+ */
+RiceVillageManager.prototype.handleQiuYeQingDialog = function() {
+    if (!this._validateSystem()) return;
+
+    const player = this.core.gameData.player;
+    if (!player.characterCreated) {
+        this.showDialog(NPC_NAMES.QIU_YE_QING, '请先与刘大海完成角色创建。');
+        return;
+    }
+
+    const genderTitle = player.gender === 'male' ? '小哥' : '小妹';
+    const npc = this.core.gameData.riceVillage.npcs[NPC_NAMES.QIU_YE_QING];
+
+    // 优先检查李复的对话任务
+    const lifuDialogQuest = this.hasActiveQuestFromNPC(NPC_NAMES.LI_FU, 'qingyinvzi');
+    if (lifuDialogQuest) {
+        // 完成李复的青衣女子任务
+        this.showDialog(NPC_NAMES.QIU_YE_QING, '本小姐可不是他的丫头，召之即来挥之即去。难道我这般待你竟不如一个乡下人么！', [
+            { text: '询问山崖上的事', action: 'complete_lifu_dialog_quest' },
+            { text: '稍后再说', action: 'close_dialog' }
+        ]);
+        return;
+    }
+
+    // 使用统一任务检查函数
+    const completableQuests = this.checkCompletableQuests(NPC_NAMES.QIU_YE_QING);
+
+    if (completableQuests.length > 0) {
+        // 有可提交的任务
+        const quest = completableQuests[0];
+        this.showDialog(NPC_NAMES.QIU_YE_QING, `你完成了"${quest.name}"任务，这是你应得的。`, [
+            { text: '提交任务', action: 'submit_quest_to_npc' },
+            { text: '稍后再说', action: 'close_dialog' }
+        ]);
+        return;
+    }
+
+    // 检查是否已有秋叶青的任务
+    if (this.hasActiveQuestFromNPC(NPC_NAMES.QIU_YE_QING)) {
+        this.showDialog(NPC_NAMES.QIU_YE_QING, '你的任务还在进行中，快去完成吧。');
+        return;
+    }
+
+    // 根据questStage发布新任务
+    // 重要：questStage只在任务提交后推进，不在对话时推进
+    switch (npc.questStage) {
+        case 0:
+            // 第二个任务：无耻之徒（击杀可疑的山贼）
+            this.showDialog(NPC_NAMES.QIU_YE_QING, '你又是何人？李复他竟然叫你来问我话？我凭什么要告诉你？你若想我告诉你，去把下面那些毛手毛脚的可疑山贼给杀了，我便考虑要不要告诉你。否则免谈！');
+            this.createNPCQuest(NPC_NAMES.QIU_YE_QING, 'wuchizhi_tu', '无耻之徒', '清理那些毛手毛脚的可疑山贼', QUEST_TYPES.KILL, '可疑的山贼', 6, { exp: 220, gold: 30 });
+            // questStage保持0，等任务完成后才推进到1
+            break;
+
+        case 1:
+            // 第三个任务：难知女儿心（传达消息给李复）
+            this.showDialog(NPC_NAMES.QIU_YE_QING, '李复啊，李复，我从京畿随你到此，你对我不理不睬也罢了，今天竟让一个外人来拷问我。难道我这般待你竟不如一个乡下人么！少侠，你去告诉李复，不错，我是看到了什么！若想知道，自己来问我！否则自己想去！');
+            this.createNPCQuest(NPC_NAMES.QIU_YE_QING, 'nanzhi_nvr_xin', '难知女儿心', '回到李复处传达秋叶青的话', QUEST_TYPES.PROVIDE_ITEM, '与李复对话', 1, { exp: 250, gold: 35 });
+            // questStage保持1，等任务完成后才推进到2
+            break;
+
+        case 2:
+            // 第五个任务：女儿家心思（制作茶水）
+            this.showDialog(NPC_NAMES.QIU_YE_QING, '他终于明白了...你帮我制作3份茶水，我要好好打扮一下。');
+            this.createNPCQuest(NPC_NAMES.QIU_YE_QING, 'nvr_jia_xinsi', '女儿家心思', '为秋叶青制作3份茶水', QUEST_TYPES.PROVIDE_ITEM, '茶饮', 3, { exp: 300, gold: 45 });
+            // questStage保持2，等任务完成后才推进到3
+            break;
+
+        case 3:
+            // 第七个任务：真相大白（击杀可疑的山贼）
+            this.showDialog(NPC_NAMES.QIU_YE_QING, '现在我可以告诉你真相了。那日我在山崖上确实看到了可疑的身影，你去清理那些可疑的山贼，为小荷报仇！');
+            this.createNPCQuest(NPC_NAMES.QIU_YE_QING, 'zhenxiang_dabai', '真相大白', '为小荷报仇，击败可疑的山贼', QUEST_TYPES.KILL, '可疑的山贼', 4, { exp: 350, gold: 60 });
+            // questStage保持3，等任务完成后才推进到4
+            break;
+
+        case 4:
+            // 任务链基本完成，显示感谢对话
+            this.showDialog(NPC_NAMES.QIU_YE_QING, '谢谢你帮我和李复解决了这些问题。小荷的仇也报了，我的心情也好多了。');
+            break;
+
+        default:
+            // 默认对话
+            this.showDialog(NPC_NAMES.QIU_YE_QING, '我从长安秋家而来，跟随李复到此。这里是什么地方啊！什么都没有！');
+            break;
+    }
 };
 
 // ===== 第六区域：游戏核心功能（数据更新层）=====
@@ -2145,7 +2587,7 @@ RiceVillageManager.prototype.attackMonster = function(monsterName) {
     setTimeout(() => {
         // 计算玩家+猫咪的总攻击力
         const player = this.core.gameData.player;
-        const playerAttack = player.power || 5; // 玩家基础攻击力
+        const playerAttack = player.stats ? player.stats.power : (player.power || 5); // 玩家攻击力（包含装备加成）
         const catAttack = player.partner?.attack || 0; // 猫咪攻击力
         const totalDamage = playerAttack + catAttack;
 
@@ -2758,10 +3200,16 @@ RiceVillageManager.prototype.updatePlayerStatus = function() {
         expElement.textContent = `${currentExp}/${nextLevelExp}`;
     }
 
-    // 更新血量
+    // 🔧 强制重新计算属性，确保显示正确数值
+    this.updatePlayerStats();
+    
+    // 更新血量（强制使用重新计算的正确数值）
     const hpElement = document.getElementById('player-hp');
     if (hpElement) {
-        hpElement.textContent = `${player.hp || 100}/${player.maxHp || 100}`;
+        const currentHp = player.hp || 100;
+        const maxHp = player.maxHp || 100;
+        hpElement.textContent = `${currentHp}/${maxHp}`;
+        console.log('🔍 更新血量显示:', `${currentHp}/${maxHp}`, '强制同步后');
     }
 
     // 更新体力
@@ -2770,10 +3218,12 @@ RiceVillageManager.prototype.updatePlayerStatus = function() {
         staminaElement.textContent = `${player.stamina || 100}/${player.maxStamina || 100}`;
     }
 
-    // 更新攻击力
+    // 更新攻击力（强制使用重新计算的正确数值）
     const powerElement = document.getElementById('player-power');
     if (powerElement) {
-        powerElement.textContent = player.power || 5;
+        const displayPower = player.power || 5;
+        powerElement.textContent = displayPower;
+        console.log('🔍 更新攻击力显示:', displayPower, '强制同步后');
     }
 
     // 更新金币
@@ -2862,6 +3312,16 @@ RiceVillageManager.prototype.renderNPCsTable = function() {
             name: '王富',
             job: '车夫',
             description: '驿站车夫，负责运送旅客'
+        },
+        [NPC_NAMES.QIU_YE_QING]: {
+            name: '秋叶青',
+            job: '秋家大小姐',
+            description: '长安来的秋家大小姐'
+        },
+        [NPC_NAMES.WEAPON_SHOP_OWNER]: {
+            name: '武器铺老板',
+            job: '武器商人',
+            description: '经营武器装备买卖'
         }
     };
 
@@ -2920,7 +3380,7 @@ RiceVillageManager.prototype.renderMonstersTable = function() {
     const killCounts = this.core.gameData.riceVillage.killCounts || {};
 
     // 使用统一的怪物配置 - 按照重建指导文档的怪物分类系统
-    const monsterNames = ['野兔', '果子狸', '野猪', '猴子', '山贼', '董虎'];
+    const monsterNames = ['野兔', '果子狸', '野猪', '猴子', '山贼', '可疑的山贼', '董虎'];
 
     let monstersHTML = '';
 
@@ -3318,6 +3778,107 @@ RiceVillageManager.prototype.handleDialogOption = function(action) {
             this.addDebugLog('✅ 完成王婆婆的馒头任务');
             this.closeDialog();
             break;
+        case 'complete_lifu_dialog_quest':
+            // 特殊处理：完成李复的青衣女子对话任务
+            const activeQuests = this.core.gameData.quests.active || [];
+            const lifuNPC = this.core.gameData.riceVillage.npcs[NPC_NAMES.LI_FU];
+            
+            // 找到李复的青衣女子任务并直接完成
+            const questIndex = activeQuests.findIndex(q => q.id === 'qingyinvzi' && q.npc === NPC_NAMES.LI_FU);
+            if (questIndex > -1) {
+                const quest = activeQuests[questIndex];
+                
+                // 完成任务
+                quest.status = 'completed';
+                this.addDebugLog(`✅ 任务完成: ${quest.name}`);
+                
+                // 给予奖励
+                this.giveQuestRewards(quest);
+                
+                // 移动到已完成任务列表
+                activeQuests.splice(questIndex, 1);
+                if (!this.core.gameData.quests.completed) {
+                    this.core.gameData.quests.completed = [];
+                }
+                this.core.gameData.quests.completed.push(quest);
+                
+                // 推进李复的questStage
+                if (lifuNPC) {
+                    lifuNPC.questStage++;
+                    console.log(`📈 完成李复青衣女子任务，questStage推进到: ${lifuNPC.questStage}`);
+                }
+                
+                // 显示完成信息
+                this.addDebugLog(`🎉 完成李复青衣女子任务，获得 ${quest.rewards.exp} 经验, ${quest.rewards.gold} 金币`);
+                
+                // 更新显示和保存数据
+                this.updateQuestDisplay();
+                this.updatePlayerStatus();
+                this.renderNPCsTable();
+                this.core.saveGameData();
+                
+                // 显示秋叶青的回应
+                this.showDialog(NPC_NAMES.QIU_YE_QING, '山崖上的事？我确实看到了一些东西...但你去告诉李复，若想知道，自己来问我！否则免谈！', [
+                    { text: '明白了', action: 'close_dialog' }
+                ]);
+            } else {
+                this.showDialog(NPC_NAMES.QIU_YE_QING, '你没有相关的任务。');
+            }
+            break;
+        case 'complete_qiuyeqing_dialog_quest':
+            // 特殊处理：完成秋叶青的难知女儿心对话任务
+            const activeQuests2 = this.core.gameData.quests.active || [];
+            const qiuyeqingNPC = this.core.gameData.riceVillage.npcs[NPC_NAMES.QIU_YE_QING];
+            
+            // 找到秋叶青的难知女儿心任务并直接完成
+            const questIndex2 = activeQuests2.findIndex(q => q.id === 'nanzhi_nvr_xin' && q.npc === NPC_NAMES.QIU_YE_QING);
+            if (questIndex2 > -1) {
+                const quest = activeQuests2[questIndex2];
+                
+                // 完成任务
+                quest.status = 'completed';
+                this.addDebugLog(`✅ 任务完成: ${quest.name}`);
+                
+                // 给予奖励
+                this.giveQuestRewards(quest);
+                
+                // 移动到已完成任务列表
+                activeQuests2.splice(questIndex2, 1);
+                if (!this.core.gameData.quests.completed) {
+                    this.core.gameData.quests.completed = [];
+                }
+                this.core.gameData.quests.completed.push(quest);
+                
+                // 推进秋叶青的questStage
+                if (qiuyeqingNPC) {
+                    qiuyeqingNPC.questStage++;
+                    console.log(`📈 完成秋叶青难知女儿心任务，questStage推进到: ${qiuyeqingNPC.questStage}`);
+                }
+                
+                // 显示完成信息
+                this.addDebugLog(`🎉 完成秋叶青难知女儿心任务，获得 ${quest.rewards.exp} 经验, ${quest.rewards.gold} 金币`);
+                
+                // 更新显示和保存数据
+                this.updateQuestDisplay();
+                this.updatePlayerStatus();
+                this.renderNPCsTable();
+                this.core.saveGameData();
+                
+                // 显示李复的回应并自动发布下一个任务
+                this.showDialog(NPC_NAMES.LI_FU, '（李复微微叹了口气，却丝毫没有理会秋叶青的意思。）我明白她的心意了...', [
+                    { text: '李复似乎有话要说', action: 'close_dialog_and_retalk_lifu' }
+                ]);
+            } else {
+                this.showDialog(NPC_NAMES.LI_FU, '你没有相关的任务。');
+            }
+            break;
+        case 'close_dialog_and_retalk_lifu':
+            // 关闭对话并重新与李复对话，触发下一个任务
+            this.closeDialog();
+            setTimeout(() => {
+                this.talkToNPC(NPC_NAMES.LI_FU);
+            }, 500);
+            break;
         case 'receive_final_reward':
             // 处理王婆婆最终奖励：精致令牌 + 300经验
             if (this.core.inventorySystem) {
@@ -3354,6 +3915,18 @@ RiceVillageManager.prototype.handleDialogOption = function(action) {
             break;
         case 'close_dialog':
             this.closeDialog();
+            break;
+        case 'open_weapon_shop':
+            // 打开武器装备购买界面
+            this.openWeaponShop();
+            break;
+        case 'open_sell_shop':
+            // 打开物品出售界面
+            this.openSellShop();
+            break;
+        case 'show_inventory':
+            // 显示背包界面
+            this.showInventory();
             break;
         default:
             this.closeDialog();
@@ -3562,6 +4135,251 @@ RiceVillageManager.prototype.showYangzhouMapButton = function() {
     this.addDebugLog('🗺️ 扬州地图按钮已显示');
 };
 
+// ===== 第九区域：商店系统 =====
+
+/**
+ * 🏪 打开武器装备商店界面
+ */
+RiceVillageManager.prototype.openWeaponShop = function() {
+    if (!this._validateSystem()) return;
+
+    const player = this.core.gameData.player;
+    const playerLevel = player.level;
+    const playerFunds = player.funds;
+
+    // 获取可购买的装备列表
+    const shopItems = this.core.inventorySystem.getWeaponShopItems(playerLevel);
+
+    let shopHTML = `
+        <div class="shop-container">
+            <div class="shop-header">
+                <h3>武器装备商店</h3>
+                <p>金币: ${playerFunds} | 等级: ${playerLevel}</p>
+            </div>
+            <div class="shop-categories">
+    `;
+
+    // 武器分类
+    if (shopItems.weapons.length > 0) {
+        shopHTML += `
+            <div class="shop-category">
+                <h4>武器</h4>
+                <div class="items-grid">
+        `;
+        shopItems.weapons.forEach(weapon => {
+            const canAfford = playerFunds >= weapon.price;
+            const buttonClass = canAfford ? 'buy-btn' : 'buy-btn disabled';
+            shopHTML += `
+                <div class="shop-item">
+                    <div class="item-info">
+                        <strong>${weapon.name}</strong>
+                        <div class="item-stats">攻击力: +${weapon.attack}</div>
+                        <div class="item-desc">${weapon.description}</div>
+                        <div class="item-price">价格: ${weapon.price} 金币</div>
+                    </div>
+                    <button class="${buttonClass}" onclick="riceVillageManager.buyWeaponShopItem('${weapon.name}', 'weapon')" ${!canAfford ? 'disabled' : ''}>
+                        ${canAfford ? '购买' : '金币不足'}
+                    </button>
+                </div>
+            `;
+        });
+        shopHTML += `</div></div>`;
+    }
+
+    // 防具分类
+    if (shopItems.armor.length > 0) {
+        shopHTML += `
+            <div class="shop-category">
+                <h4>防具</h4>
+                <div class="items-grid">
+        `;
+        shopItems.armor.forEach(armor => {
+            const canAfford = playerFunds >= armor.price;
+            const buttonClass = canAfford ? 'buy-btn' : 'buy-btn disabled';
+            shopHTML += `
+                <div class="shop-item">
+                    <div class="item-info">
+                        <strong>${armor.name}</strong>
+                        <div class="item-stats">防御力: +${armor.defense}</div>
+                        <div class="item-desc">${armor.description}</div>
+                        <div class="item-price">价格: ${armor.price} 金币</div>
+                    </div>
+                    <button class="${buttonClass}" onclick="riceVillageManager.buyWeaponShopItem('${armor.name}', 'weapon')" ${!canAfford ? 'disabled' : ''}>
+                        ${canAfford ? '购买' : '金币不足'}
+                    </button>
+                </div>
+            `;
+        });
+        shopHTML += `</div></div>`;
+    }
+
+    shopHTML += `
+            </div>
+            <div class="shop-footer">
+                <button class="close-btn" onclick="riceVillageManager.closeShop()">关闭商店</button>
+                <button class="switch-btn" onclick="riceVillageManager.openSellShop()">切换到出售</button>
+            </div>
+        </div>
+    `;
+
+    this.showShopWindow(shopHTML);
+};
+
+/**
+ * 🏪 打开物品出售界面
+ */
+RiceVillageManager.prototype.openSellShop = function() {
+    if (!this._validateSystem()) return;
+
+    const player = this.core.gameData.player;
+    const playerFunds = player.funds;
+
+    // 获取可出售的物品列表
+    const sellableItems = this.core.inventorySystem.getSellableItems();
+
+    let shopHTML = `
+        <div class="shop-container">
+            <div class="shop-header">
+                <h3>物品出售</h3>
+                <p>金币: ${playerFunds}</p>
+            </div>
+            <div class="sell-items">
+    `;
+
+    if (sellableItems.length === 0) {
+        shopHTML += `
+            <div class="no-items">
+                <p>背包中没有可出售的物品</p>
+            </div>
+        `;
+    } else {
+        // 按分类组织物品
+        const categorizedItems = {};
+        sellableItems.forEach(item => {
+            if (!categorizedItems[item.category]) {
+                categorizedItems[item.category] = [];
+            }
+            categorizedItems[item.category].push(item);
+        });
+
+        // 显示每个分类的物品
+        Object.entries(categorizedItems).forEach(([category, items]) => {
+            shopHTML += `
+                <div class="sell-category">
+                    <h4>${category}</h4>
+                    <div class="items-grid">
+            `;
+            
+            items.forEach(item => {
+                shopHTML += `
+                    <div class="sell-item">
+                        <div class="item-info">
+                            <strong>${item.name}</strong>
+                            <div class="item-count">拥有: ${item.count}</div>
+                            <div class="item-price">单价: ${item.sellPrice} 金币</div>
+                            <div class="item-total">全卖: ${item.sellPrice * item.count} 金币</div>
+                        </div>
+                        <div class="sell-actions">
+                            <button class="sell-btn" onclick="riceVillageManager.sellItem('${item.name}', 1)">卖出 1个</button>
+                            ${item.count > 1 ? `<button class="sell-all-btn" onclick="riceVillageManager.sellItem('${item.name}', ${item.count})">全部卖出</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            shopHTML += `</div></div>`;
+        });
+    }
+
+    shopHTML += `
+            </div>
+            <div class="shop-footer">
+                <button class="close-btn" onclick="riceVillageManager.closeShop()">关闭商店</button>
+                <button class="switch-btn" onclick="riceVillageManager.openWeaponShop()">切换到购买</button>
+            </div>
+        </div>
+    `;
+
+    this.showShopWindow(shopHTML);
+};
+
+/**
+ * 购买武器商店物品
+ * @param {string} itemName - 物品名称
+ * @param {string} shopType - 商店类型
+ */
+RiceVillageManager.prototype.buyWeaponShopItem = function(itemName, shopType) {
+    if (!this._validateSystem()) return;
+
+    const result = this.core.inventorySystem.buyItem(itemName, 1, shopType);
+    
+    if (result.success) {
+        this.addDebugLog(`🛒 购买成功: ${result.message}`);
+        // 刷新商店界面
+        this.openWeaponShop();
+        // 更新玩家状态显示
+        this.updatePlayerStatus();
+    } else {
+        this.addDebugLog(`❌ 购买失败: ${result.message}`);
+        alert(result.message);
+    }
+};
+
+/**
+ * 出售物品
+ * @param {string} itemName - 物品名称
+ * @param {number} quantity - 出售数量
+ */
+RiceVillageManager.prototype.sellItem = function(itemName, quantity) {
+    if (!this._validateSystem()) return;
+
+    const result = this.core.inventorySystem.sellItem(itemName, quantity);
+    
+    if (result.success) {
+        this.addDebugLog(`💰 出售成功: ${result.message}`);
+        // 刷新出售界面
+        this.openSellShop();
+        // 更新玩家状态显示
+        this.updatePlayerStatus();
+    } else {
+        this.addDebugLog(`❌ 出售失败: ${result.message}`);
+        alert(result.message);
+    }
+};
+
+/**
+ * 显示商店窗口
+ * @param {string} content - 商店内容HTML
+ */
+RiceVillageManager.prototype.showShopWindow = function(content) {
+    // 关闭对话窗口
+    this.closeDialog();
+    
+    // 创建或更新商店窗口
+    let shopWindow = document.getElementById('shop-window');
+    if (!shopWindow) {
+        shopWindow = document.createElement('div');
+        shopWindow.id = 'shop-window';
+        shopWindow.className = 'shop-window';
+        document.body.appendChild(shopWindow);
+    }
+    
+    shopWindow.innerHTML = content;
+    shopWindow.style.display = 'block';
+    document.body.classList.add('shop-active');
+};
+
+/**
+ * 关闭商店窗口
+ */
+RiceVillageManager.prototype.closeShop = function() {
+    const shopWindow = document.getElementById('shop-window');
+    if (shopWindow) {
+        shopWindow.style.display = 'none';
+        document.body.classList.remove('shop-active');
+    }
+};
+
 // ===== 第十区域：调试和工具函数 =====
 
 // 全局变量 - 将由HTML页面按正确时序创建
@@ -3611,6 +4429,244 @@ function debugNPCStatus() {
             debugInfo += `${name}: questStage=${data.questStage}\n`;
         });
         alert(debugInfo);
+    }
+}
+
+// 调试函数：装备状态
+function debugEquipmentStatus() {
+    if (riceVillageManager && riceVillageManager._validateSystem()) {
+        const gameData = riceVillageManager.core.gameData;
+        const inventory = gameData.inventory;
+        const playerEquipment = gameData.player.equipment;
+        
+        let debugInfo = '🎒 装备状态调试:\n\n';
+        
+        debugInfo += '📦 背包中的装备:\n';
+        const equipmentItems = inventory.equipment || [];
+        if (equipmentItems.length === 0) {
+            debugInfo += '  暂无装备\n';
+        } else {
+            equipmentItems.forEach((item, index) => {
+                debugInfo += `  ${index + 1}. ${item.name} (ID: ${item.id})\n`;
+                debugInfo += `     攻击: ${item.attack || 0}, 防御: ${item.defense || 0}\n`;
+                debugInfo += `     类别: ${item.category || item.type || '未知'}\n`;
+            });
+        }
+        
+        debugInfo += '\n⚔️ 当前装备的物品:\n';
+        debugInfo += `  武器: ${playerEquipment.weapon ? playerEquipment.weapon.name : '无'}\n`;
+        debugInfo += `  防具: ${playerEquipment.armor ? playerEquipment.armor.name : '无'}\n`;
+        
+        debugInfo += '\n📊 玩家属性:\n';
+        debugInfo += `  基础攻击力: ${gameData.player.stats.basePower || 5}\n`;
+        debugInfo += `  当前攻击力: ${gameData.player.stats.power || 5}\n`;
+        debugInfo += `  血量: ${gameData.player.stats.hp}/${gameData.player.stats.maxHp}\n`;
+        
+        alert(debugInfo);
+        console.log('🎒 装备详细数据:', {
+            inventoryEquipment: equipmentItems,
+            playerEquipment: playerEquipment,
+            playerStats: gameData.player.stats
+        });
+    }
+}
+
+// 修复装备ID的函数
+function fixEquipmentIds() {
+    if (riceVillageManager && riceVillageManager._validateSystem()) {
+        const gameData = riceVillageManager.core.gameData;
+        const inventory = gameData.inventory;
+        
+        console.log('🔧 开始修复装备ID...');
+        
+        let fixedCount = 0;
+        if (inventory.equipment && inventory.equipment.length > 0) {
+            inventory.equipment.forEach((item, index) => {
+                if (typeof item.id === 'number' && item.id % 1 !== 0) {
+                    // 如果ID是浮点数，转换为整数
+                    const oldId = item.id;
+                    item.id = Math.floor(item.id);
+                    console.log(`🔧 修复装备 ${item.name}: ${oldId} → ${item.id}`);
+                    fixedCount++;
+                }
+            });
+        }
+        
+        // 保存修复后的数据
+        if (fixedCount > 0) {
+            riceVillageManager.core.saveGameData();
+            alert(`✅ 已修复 ${fixedCount} 个装备的ID，请重新打开背包查看装备`);
+        } else {
+            alert('✅ 装备ID无需修复');
+        }
+    }
+}
+
+// 手动刷新状态显示
+function refreshPlayerStatus() {
+    if (riceVillageManager && riceVillageManager._validateSystem()) {
+        console.log('🔄 手动刷新玩家状态显示...');
+        riceVillageManager.updatePlayerStats(); // 重新计算装备加成
+        riceVillageManager.updatePlayerStatus(); // 刷新界面显示
+        alert('✅ 状态已刷新，请查看角色状态表格');
+    }
+}
+
+// 快速检查攻击力计算
+function debugPowerCalculation() {
+    if (riceVillageManager && riceVillageManager._validateSystem()) {
+        const player = riceVillageManager.core.gameData.player;
+        const level = player.level || 1;
+        const expectedBasePower = 5 + (level - 1) * 3;
+        
+        console.log('🔍 攻击力数据分析:');
+        console.log(`等级: ${level}`);
+        console.log(`预期基础攻击力: ${expectedBasePower} = 5基础 + ${(level - 1) * 3}升级加成`);
+        console.log(`实际存储的basePower: ${player.stats?.basePower}`);
+        console.log(`实际显示的power: ${player.stats?.power}`);
+        console.log(`兼容结构的power: ${player.power}`);
+        
+        // 强制重新计算并更新
+        riceVillageManager.updatePlayerStats();
+        riceVillageManager.updatePlayerStatus();
+        
+        alert(`🔍 攻击力检查：\n等级: ${level}\n预期基础攻击力: ${expectedBasePower}\n实际攻击力: ${player.stats?.power}\n已强制重新计算！`);
+    }
+}
+
+// 🔧 一键修复所有数值显示问题
+function fixAllPlayerData() {
+    if (riceVillageManager && riceVillageManager._validateSystem()) {
+        const player = riceVillageManager.core.gameData.player;
+        const level = player.level || 1;
+        
+        console.log('🚀 开始一键修复所有数值问题...');
+        
+        // 1. 确保stats系统存在
+        if (!player.stats) {
+            player.stats = {
+                hp: player.hp || 100,
+                maxHp: player.maxHp || 100,
+                stamina: player.stamina || 100,
+                maxStamina: player.maxStamina || 100,
+                power: 5,
+                basePower: 5
+            };
+        }
+        
+        // 2. 强制重新计算所有基础属性
+        const correctBasePower = 5 + (level - 1) * 3;
+        const correctBaseMaxHp = 100 + (level - 1) * 5;
+        
+        player.stats.basePower = correctBasePower;
+        player.stats.maxHp = correctBaseMaxHp;
+        player.stats.power = correctBasePower;
+        player.stats.hp = Math.min(player.stats.hp || correctBaseMaxHp, correctBaseMaxHp);
+        
+        // 3. 同步到兼容数据结构
+        player.power = correctBasePower;
+        player.maxHp = correctBaseMaxHp;
+        player.hp = player.stats.hp;
+        
+        console.log('✅ 基础属性修复完成:', {
+            level: level,
+            basePower: correctBasePower,
+            baseMaxHp: correctBaseMaxHp
+        });
+        
+        // 4. 重新计算装备加成
+        riceVillageManager.updatePlayerStats();
+        
+        // 5. 保存数据
+        riceVillageManager.core.saveGameData();
+        
+        // 6. 强制刷新显示
+        riceVillageManager.updatePlayerStatus();
+        
+        console.log('🎉 修复完成，最终数值:', {
+            显示攻击力: player.power,
+            显示血量: `${player.hp}/${player.maxHp}`,
+            stats攻击力: player.stats.power,
+            stats血量: `${player.stats.hp}/${player.stats.maxHp}`
+        });
+        
+        alert(`🎉 一键修复完成！\n\n等级: ${level}\n攻击力: ${player.power}\n血量: ${player.hp}/${player.maxHp}\n\n数值显示已完全正常！`);
+    }
+}
+
+// 修复存档数据，确保升级系统正确生效
+function fixPlayerStatsSystem() {
+    if (riceVillageManager && riceVillageManager._validateSystem()) {
+        const player = riceVillageManager.core.gameData.player;
+        
+        console.log('🔧 开始修复玩家属性系统...');
+        console.log('🔍 修复前数据:', {
+            level: player.level,
+            power: player.power,
+            maxHp: player.maxHp,
+            stats: player.stats
+        });
+        
+        // 确保stats系统存在
+        if (!player.stats) {
+            player.stats = {
+                hp: player.hp || 100,
+                maxHp: player.maxHp || 100,
+                stamina: player.stamina || 100,
+                maxStamina: player.maxStamina || 100,
+                power: player.power || 5,
+                basePower: 5 // 1级基础攻击力
+            };
+        }
+        
+        // 🔧 修复：确保basePower被正确初始化（防止为0或undefined）
+        if (!player.stats.basePower || player.stats.basePower < 5) {
+            player.stats.basePower = 5; // 至少1级的基础攻击力
+        }
+        
+        // 根据当前等级重新计算基础属性
+        const level = player.level || 1;
+        const calculatedBasePower = 5 + (level - 1) * 3; // 每级+3攻击力
+        player.stats.basePower = calculatedBasePower;
+        console.log(`⚔️ 重新计算基础攻击力: 等级${level} = 5基础 + ${(level - 1) * 3}升级加成 = ${calculatedBasePower}`);
+        // 注意：血量通过装备系统计算，确保包含装备加成
+        
+        // 确保当前血量不超过最大血量
+        if (player.stats.hp > player.stats.maxHp) {
+            player.stats.hp = player.stats.maxHp;
+        }
+        
+        // 兼容旧数据结构
+        player.power = player.stats.basePower;
+        player.maxHp = player.stats.maxHp;
+        player.hp = player.stats.hp;
+        
+        console.log('✅ 修复后数据:', {
+            level: player.level,
+            power: player.power,
+            maxHp: player.maxHp,
+            stats: player.stats
+        });
+        
+        // 重新计算装备加成（包含血量）
+        riceVillageManager.updatePlayerStats();
+        
+        // 确保血量数据一致性
+        if (player.stats.hp > player.stats.maxHp) {
+            player.stats.hp = player.stats.maxHp;
+        }
+        player.hp = player.stats.hp;
+        player.maxHp = player.stats.maxHp;
+        
+        // 保存修复后的数据
+        riceVillageManager.core.saveGameData();
+        
+        // 刷新显示
+        riceVillageManager.updatePlayerStatus();
+        
+        const expectedMaxHp = 100 + (level - 1) * 5;
+        const expectedBasePower = 5 + (level - 1) * 3;
+        alert(`✅ 升级系统修复完成！\n\n等级: ${level}\n基础攻击力: ${player.stats.basePower}（应该是${expectedBasePower}）\n显示攻击力: ${player.power}（基础 + 装备加成）\n血量: ${player.stats.hp}/${player.stats.maxHp}（${expectedMaxHp}基础 + 装备加成）\n\n✅ 攻击力计算逻辑已修复！`);
     }
 }
 
