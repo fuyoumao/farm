@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扬州城外地图</title>
+    <style>
+        .map-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .map-container {
+            background: #f5f5f5;
+            border: 3px solid #333;
+            border-radius: 10px;
+            padding: 20px;
+            width: 90%;
+            max-width: 1000px;
+            height: 80%;
+            position: relative;
+        }
+
+        .map-header {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 10px;
+            height: 60%;
+            margin-bottom: 20px;
+        }
+
+        .location-btn {
+            background: #e0e0e0;
+            border: 2px solid #999;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .location-btn:hover {
+            background: #d0d0d0;
+            border-color: #666;
+        }
+
+        .location-btn.active {
+            background: #ffeb3b;
+            border-color: #f57f17;
+            color: #333;
+        }
+
+        .location-btn.locked {
+            background: #ccc;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        /* 地图布局定位 */
+        .ziweigang { grid-column: 1; grid-row: 1; }
+        .yangzhou-city { grid-column: 6; grid-row: 1; }
+        .kuangchang { grid-column: 1; grid-row: 2; }
+        .yezhuilin { grid-column: 2; grid-row: 2; }
+        .zailai-town { grid-column: 3; grid-row: 2; }
+        .shuitian { grid-column: 4; grid-row: 2; }
+        .chengnan-forest { grid-column: 5; grid-row: 2; }
+        .yunhe-shore { grid-column: 6; grid-row: 2; }
+        .yunhe { grid-column: 6; grid-row: 3; }
+        .fenghuang-island { grid-column: 6; grid-row: 2.5; font-size: 10px; }
+        .hujianling { grid-column: 2; grid-row: 4; }
+        .longjianling { grid-column: 3; grid-row: 4; }
+        .donglizhai { grid-column: 4; grid-row: 4; }
+        .dongli-dock { grid-column: 5; grid-row: 4; }
+
+        .info-panel {
+            height: 30%;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .info-section {
+            background: white;
+            border: 2px solid #999;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .info-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-align: center;
+            background: #e0e0e0;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .info-list {
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .info-item {
+            padding: 3px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 12px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .close-btn:hover {
+            background: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="map-overlay" id="mapOverlay">
+        <div class="map-container">
+            <button class="close-btn" onclick="closeMap()">×</button>
+            
+            <div class="map-header">扬州城外地图</div>
+            
+            <div class="map-grid">
+                <!-- 第一行 -->
+                <button class="location-btn ziweigang" onclick="selectLocation('ziweigang')">紫薇岗</button>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <button class="location-btn yangzhou-city" onclick="selectLocation('yangzhou-city')">扬州城</button>
+                
+                <!-- 第二行 -->
+                <button class="location-btn kuangchang" onclick="selectLocation('kuangchang')">矿场</button>
+                <button class="location-btn yezhuilin" onclick="selectLocation('yezhuilin')">野猪林</button>
+                <button class="location-btn zailai-town active" onclick="selectLocation('zailai-town')">再来镇</button>
+                <button class="location-btn shuitian" onclick="selectLocation('shuitian')">水田区</button>
+                <button class="location-btn chengnan-forest" onclick="selectLocation('chengnan-forest')">城南树林</button>
+                <button class="location-btn yunhe-shore" onclick="selectLocation('yunhe-shore')">运河沿岸</button>
+                
+                <!-- 第三行 -->
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <button class="location-btn yunhe" onclick="selectLocation('yunhe')">运河</button>
+                
+                <!-- 凤凰岛（特殊位置） -->
+                <button class="location-btn fenghuang-island locked" onclick="selectLocation('fenghuang-island')">凤凰岛</button>
+                
+                <!-- 第四行 -->
+                <div></div>
+                <button class="location-btn hujianling" onclick="selectLocation('hujianling')">虎剑岭</button>
+                <button class="location-btn longjianling" onclick="selectLocation('longjianling')">龙剑岭</button>
+                <button class="location-btn donglizhai" onclick="selectLocation('donglizhai')">东篱寨</button>
+                <button class="location-btn dongli-dock" onclick="selectLocation('dongli-dock')">东篱寨码头</button>
+                <div></div>
+            </div>
+            
+            <div class="info-panel">
+                <div class="info-section">
+                    <div class="info-title">NPC列表</div>
+                    <div class="info-list" id="npc-list">
+                        <div class="info-item">张六爷（杂货商人）</div>
+                        <div class="info-item">王老虎（武器商人）</div>
+                        <div class="info-item">徐伟</div>
+                        <div class="info-item">阳宝哥</div>
+                        <div class="info-item">阿诛</div>
+                        <div class="info-item">林老板（林记烟花铺子）</div>
+                        <div class="info-item">叶小天</div>
+                        <div class="info-item">陆仁甲（凌雪阁探子）</div>
+                    </div>
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-title">野怪列表</div>
+                    <div class="info-list" id="monster-list">
+                        <div class="info-item">暂无野怪</div>
+                    </div>
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-title">植物列表</div>
+                    <div class="info-list" id="plant-list">
+                        <div class="info-item">暂无植物</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 地点数据配置
+        const locationData = {
+            'zailai-town': {
+                name: '再来镇',
+                npcs: [
+                    '张六爷（杂货商人）',
+                    '王老虎（武器商人）',
+                    '徐伟',
+                    '阳宝哥',
+                    '阿诛',
+                    '林老板（林记烟花铺子）',
+                    '叶小天',
+                    '陆仁甲（凌雪阁探子）'
+                ],
+                monsters: [],
+                plants: []
+            },
+            'ziweigang': {
+                name: '紫薇岗',
+                npcs: [
+                    '隐居药师',
+                    '采药人'
+                ],
+                monsters: [
+                    '猛虎'
+                ],
+                plants: [
+                    '芍药',
+                    '紫薇'
+                ]
+            },
+            'yezhuilin': {
+                name: '野猪林',
+                npcs: [],
+                monsters: [
+                    '野狼',
+                    '野猪',
+                    '壮年野狼'
+                ],
+                plants: [
+                    '小葱'
+                ]
+            },
+            'kuangchang': {
+                name: '矿场',
+                npcs: [
+                    '矿工头目',
+                    '矿工'
+                ],
+                monsters: [],
+                plants: [
+                    '蘑菇'
+                ]
+            },
+            'shuitian': {
+                name: '水田区',
+                npcs: [],
+                monsters: [
+                    '大闸蟹',
+                    '水蛇'
+                ],
+                plants: [
+                    '稻米'
+                ]
+            },
+            'chengnan-forest': {
+                name: '城南树林',
+                npcs: [],
+                monsters: [
+                    '野兔',
+                    '山鸡',
+                    '壮年野狼'
+                ],
+                plants: [
+                    '山楂',
+                    '浆果'
+                ]
+            },
+            'yunhe-shore': {
+                name: '运河沿岸',
+                npcs: [],
+                monsters: [
+                    '水贼'
+                ],
+                plants: [
+                    '芦苇'
+                ]
+            },
+            'yunhe': {
+                name: '运河',
+                npcs: [],
+                monsters: [
+                    '江贼',
+                    '水怪'
+                ],
+                plants: []
+            },
+            'longjianling': {
+                name: '龙剑岭',
+                npcs: [],
+                monsters: [
+                    '山贼'
+                ],
+                plants: []
+            },
+            'hujianling': {
+                name: '虎剑岭',
+                npcs: [],
+                monsters: [
+                    '山贼'
+                ],
+                plants: []
+            },
+            'donglizhai': {
+                name: '东篱寨',
+                npcs: [
+                    '被困商人'
+                ],
+                monsters: [
+                    '山寨喽啰',
+                    '寨主护卫',
+                    '山寨头目'
+                ],
+                plants: []
+            },
+            'dongli-dock': {
+                name: '东篱寨码头',
+                npcs: [
+                    '码头守卫',
+                    '船工'
+                ],
+                monsters: [],
+                plants: []
+            },
+            'yangzhou-city': {
+                name: '扬州城',
+                npcs: [
+                    '扬州车夫'
+                ],
+                monsters: [],
+                plants: []
+            },
+            'fenghuang-island': {
+                name: '凤凰岛',
+                npcs: [
+                    '凤凰岛守护者'
+                ],
+                monsters: [
+                    '凤凰幻影',
+                    '岛屿守卫'
+                ],
+                plants: [
+                    '凤凰草',
+                    '仙桃'
+                ]
+            }
+        };
+
+        // 选择地点
+        function selectLocation(locationId) {
+            // 检查是否被锁定
+            const btn = document.querySelector(`.${locationId}`);
+            if (btn.classList.contains('locked')) {
+                alert('该地点尚未解锁！');
+                return;
+            }
+
+            // 移除所有active状态
+            document.querySelectorAll('.location-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // 添加active状态到当前选择的地点
+            btn.classList.add('active');
+
+            // 更新信息面板
+            updateInfoPanel(locationId);
+        }
+
+        // 更新信息面板
+        function updateInfoPanel(locationId) {
+            const data = locationData[locationId];
+            if (!data) return;
+
+            // 更新NPC列表
+            const npcList = document.getElementById('npc-list');
+            npcList.innerHTML = '';
+            if (data.npcs.length > 0) {
+                data.npcs.forEach(npc => {
+                    const item = document.createElement('div');
+                    item.className = 'info-item';
+                    item.textContent = npc;
+                    npcList.appendChild(item);
+                });
+            } else {
+                const item = document.createElement('div');
+                item.className = 'info-item';
+                item.textContent = '暂无NPC';
+                npcList.appendChild(item);
+            }
+
+            // 更新野怪列表
+            const monsterList = document.getElementById('monster-list');
+            monsterList.innerHTML = '';
+            if (data.monsters.length > 0) {
+                data.monsters.forEach(monster => {
+                    const item = document.createElement('div');
+                    item.className = 'info-item';
+                    item.textContent = monster;
+                    monsterList.appendChild(item);
+                });
+            } else {
+                const item = document.createElement('div');
+                item.className = 'info-item';
+                item.textContent = '暂无野怪';
+                monsterList.appendChild(item);
+            }
+
+            // 更新植物列表
+            const plantList = document.getElementById('plant-list');
+            plantList.innerHTML = '';
+            if (data.plants.length > 0) {
+                data.plants.forEach(plant => {
+                    const item = document.createElement('div');
+                    item.className = 'info-item';
+                    item.textContent = plant;
+                    plantList.appendChild(item);
+                });
+            } else {
+                const item = document.createElement('div');
+                item.className = 'info-item';
+                item.textContent = '暂无植物';
+                plantList.appendChild(item);
+            }
+        }
+
+        // 关闭地图
+        function closeMap() {
+            document.getElementById('mapOverlay').style.display = 'none';
+        }
+
+        // 初始化显示再来镇信息
+        document.addEventListener('DOMContentLoaded', function() {
+            updateInfoPanel('zailai-town');
+        });
+    </script>
+</body>
+</html>

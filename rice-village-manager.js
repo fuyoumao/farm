@@ -193,11 +193,16 @@ function calculateMonsterDrops(monsterName) {
         const match = item.match(/^(.+)\((\d+)%\)$/);
         if (match) {
             const itemName = match[1].trim();
-            const dropRate = parseInt(match[2]);
+            const dropRate = parseInt(match[2], 10);
 
-            // 随机判断是否掉落
-            if (Math.random() * 100 < dropRate) {
-                drops.push(itemName);
+            // 验证掉落率是有效数字
+            if (!isNaN(dropRate) && dropRate >= 0 && dropRate <= 100) {
+                // 随机判断是否掉落
+                if (Math.random() * 100 < dropRate) {
+                    drops.push(itemName);
+                }
+            } else {
+                console.warn(`🔧 无效的掉落率: ${item} → 跳过`);
             }
         }
     });
@@ -1319,7 +1324,13 @@ RiceVillageManager.prototype.updatePlayerStats = function() {
     // 🔧 关键修复：同步数据到兼容结构，确保显示系统能读取到正确数值
     player.power = player.stats.power;
     player.maxHp = player.stats.maxHp;
-    player.hp = Math.min(player.stats.hp, player.stats.maxHp); // 确保当前血量不超过最大值
+
+    // 🔧 重要：保持当前血量，不要覆盖（怪物攻击等会修改 player.hp）
+    // 只在血量超过最大值时才调整
+    if (player.hp > player.stats.maxHp) {
+        player.hp = player.stats.maxHp;
+        console.log(`🔧 血量超过上限，调整为: ${player.hp}/${player.maxHp}`);
+    }
     
     console.log(`🔄 数据同步完成: player.power=${player.power}, player.hp=${player.hp}/${player.maxHp}`);
     
@@ -1433,26 +1444,74 @@ RiceVillageManager.prototype.checkCompletableQuests = function(npcName) {
  * @important 按照重建指导文档：完整的升级系统实现
  */
 RiceVillageManager.prototype.gainExp = function(amount) {
-    if (!this._validateSystem()) return;
+    console.log(`🧪 [DEBUG] gainExp 开始: amount=${amount}`);
+
+    if (!this._validateSystem()) {
+        console.error(`🧪 [DEBUG] gainExp 失败: 系统验证失败`);
+        return;
+    }
 
     const player = this.core.gameData.player;
 
+    // 调试：检查玩家数据完整性
+    console.log(`🧪 [DEBUG] 玩家数据检查:`, {
+        exp: player.exp,
+        level: player.level,
+        expType: typeof player.exp,
+        levelType: typeof player.level
+    });
+
+    // 确保经验和等级有默认值，特别检查 NaN
+    if (typeof player.exp !== 'number' || isNaN(player.exp) || player.exp === null || player.exp === undefined) {
+        console.error(`🧪 [DEBUG] 检测到无效经验数据: ${player.exp} (类型: ${typeof player.exp}) → 强制修复为 0`);
+        player.exp = 0;
+    }
+    if (typeof player.level !== 'number' || isNaN(player.level) || player.level === null || player.level === undefined) {
+        console.error(`🧪 [DEBUG] 检测到无效等级数据: ${player.level} (类型: ${typeof player.level}) → 强制修复为 1`);
+        player.level = 1;
+    }
+
     console.log(`📈 获得经验: ${amount}，当前经验: ${player.exp}，当前等级: ${player.level}`);
 
-    // 增加经验
+    // 增加经验，再次检查 NaN
+    const beforeExp = player.exp;
     player.exp += amount;
+
+    // 如果结果是 NaN，强制修复
+    if (isNaN(player.exp)) {
+        console.error(`🧪 [DEBUG] 经验计算结果为 NaN！强制修复: ${beforeExp} + ${amount} → ${amount}`);
+        player.exp = amount; // 直接设置为新增的经验值
+    }
+
+    console.log(`🧪 [DEBUG] 经验变化: ${beforeExp} + ${amount} = ${player.exp}`);
 
     // 检查升级 - 按照重建指导文档的公式
     let leveledUp = false;
+    let upgradeCount = 0;
+    console.log(`🧪 [DEBUG] 开始升级检查循环`);
+
     while (true) {
         const requiredExp = this.getExpRequiredForLevel(player.level);
         console.log(`🔍 升级检查: 当前经验${player.exp}，需要经验${requiredExp}`);
+        console.log(`🧪 [DEBUG] 升级检查详情: level=${player.level}, exp=${player.exp}, required=${requiredExp}, canUpgrade=${player.exp >= requiredExp}`);
 
         if (player.exp >= requiredExp) {
             // 升级！
+            const beforeLevel = player.level;
+            const beforeExp = player.exp;
+
             player.exp -= requiredExp;
             player.level++;
             leveledUp = true;
+            upgradeCount++;
+
+            console.log(`🧪 [DEBUG] 升级成功: ${beforeLevel}级(${beforeExp}经验) → ${player.level}级(${player.exp}经验)`);
+
+            // 防止无限循环
+            if (upgradeCount > 10) {
+                console.error(`🧪 [DEBUG] 升级循环异常，强制退出`);
+                break;
+            }
 
             // 按照重建指导文档：每级+5血量上限，+3基础攻击力
             // 🔧 修复：正确更新stats系统，确保与装备系统一致
@@ -1506,12 +1565,15 @@ RiceVillageManager.prototype.gainExp = function(amount) {
     }
 
     // 更新显示
+    console.log(`🧪 [DEBUG] 开始更新玩家状态显示`);
     this.updatePlayerStatus();
 
     // 保存数据
+    console.log(`🧪 [DEBUG] 开始保存游戏数据`);
     this.core.saveGameData();
 
     console.log(`📈 经验处理完成: 等级${player.level}，经验${player.exp}`);
+    console.log(`🧪 [DEBUG] gainExp 完成: 升级${upgradeCount}次, 最终状态 level=${player.level}, exp=${player.exp}`);
 };
 
 /**
@@ -2591,6 +2653,15 @@ RiceVillageManager.prototype.attackMonster = function(monsterName) {
 
     // 8秒后攻击完成
     setTimeout(() => {
+        // 按照重建指导文档：主动攻击型怪物先手攻击玩家
+        const config = MONSTER_CONFIGS[monsterName];
+        const typeConfig = MONSTER_TYPES[config.type];
+
+        if (typeConfig.isActive && monster.hp > 0) {
+            console.log(`⚔️ ${monsterName} 是主动攻击型，先手攻击玩家`);
+            this.monsterAttackPlayer(monsterName, monster);
+        }
+
         // 计算玩家+猫咪的总攻击力
         const player = this.core.gameData.player;
         const playerAttack = player.stats ? player.stats.power : (player.power || 5); // 玩家攻击力（包含装备加成）
@@ -2621,10 +2692,36 @@ RiceVillageManager.prototype.attackMonster = function(monsterName) {
             killCounts[monsterName] = (killCounts[monsterName] || 0) + 1;
 
             // 给予经验奖励 - 使用新怪物系统的随机经验值
-            this.gainExp(monster.exp);
+            let expReward = monster.exp;
+
+            // 验证经验值，如果无效则重新生成
+            if (typeof expReward !== 'number' || isNaN(expReward) || expReward <= 0) {
+                console.warn(`🔧 怪物 ${monsterName} 经验值无效: ${expReward}，重新生成`);
+
+                // 重新生成怪物属性
+                const config = MONSTER_CONFIGS[monsterName];
+                if (config) {
+                    const typeConfig = MONSTER_TYPES[config.type];
+                    if (typeConfig && typeConfig.expRange) {
+                        expReward = Math.floor(Math.random() * (typeConfig.expRange[1] - typeConfig.expRange[0] + 1)) + typeConfig.expRange[0];
+                        monster.exp = expReward; // 更新怪物数据
+                        console.log(`🔧 重新生成经验值: ${expReward}`);
+                    } else {
+                        expReward = 10; // 备用默认值
+                        console.warn(`🔧 使用备用经验值: ${expReward}`);
+                    }
+                } else {
+                    expReward = 10; // 备用默认值
+                    console.warn(`🔧 使用备用经验值: ${expReward}`);
+                }
+            }
+
+            console.log(`🧪 [DEBUG] 击败怪物 ${monsterName}，准备给予 ${expReward} 经验`);
+            this.gainExp(expReward);
+            console.log(`🧪 [DEBUG] 击败怪物经验给予完成`);
 
             // 显示经验获得动画
-            createFloatingText(`+${monster.exp}经验`, BATTLE_ANIMATION.EXP_COLOR, monsterName, 0);
+            createFloatingText(`+${expReward}经验`, BATTLE_ANIMATION.EXP_COLOR, monsterName, 0);
 
             // 计算并显示掉落物品 - 使用统一背包系统
             const drops = calculateMonsterDrops(monsterName);
@@ -2643,7 +2740,7 @@ RiceVillageManager.prototype.attackMonster = function(monsterName) {
                 console.log(`🎁 ${monsterName} 掉落: ${dropItem}`);
             });
 
-            this.addDebugLog(`💀 击败 ${monsterName}，获得 ${monster.exp} 经验${drops.length > 0 ? '，掉落: ' + drops.join(', ') : ''}`);
+            this.addDebugLog(`💀 击败 ${monsterName}，获得 ${expReward} 经验${drops.length > 0 ? '，掉落: ' + drops.join(', ') : ''}`);
 
             // 3秒后复活并重新随机属性
             setTimeout(() => {
@@ -2757,7 +2854,9 @@ RiceVillageManager.prototype.gatherPlant = function(plantName) {
         this.addDebugLog(`🌿 采集 ${plantName}`);
 
         // 按照重建指导文档：采集植物获得统一经验
+        console.log(`🧪 [DEBUG] 采集植物 ${plantName}，准备给予 ${config.expReward} 经验`);
         this.gainExp(config.expReward);
+        console.log(`🧪 [DEBUG] 采集植物经验给予完成`);
 
         // 显示经验获得动画
         createFloatingText(`+${config.expReward}经验`, BATTLE_ANIMATION.EXP_COLOR, plantName, 0);
@@ -3210,12 +3309,21 @@ RiceVillageManager.prototype.updatePlayerStatus = function() {
     this.updatePlayerStats();
     
     // 更新血量（强制使用重新计算的正确数值）
-    const hpElement = document.getElementById('player-hp');
-    if (hpElement) {
+    const hpTextElement = document.getElementById('player-hp-text');
+    if (hpTextElement) {
         const currentHp = player.hp || 100;
         const maxHp = player.maxHp || 100;
-        hpElement.textContent = `${currentHp}/${maxHp}`;
+        hpTextElement.textContent = `${currentHp}/${maxHp}`;
         console.log('🔍 更新血量显示:', `${currentHp}/${maxHp}`, '强制同步后');
+    } else {
+        // 备用：如果找不到新的血量文本元素，尝试旧的方式
+        const hpElement = document.getElementById('player-hp');
+        if (hpElement) {
+            const currentHp = player.hp || 100;
+            const maxHp = player.maxHp || 100;
+            hpElement.textContent = `${currentHp}/${maxHp}`;
+            console.log('🔍 更新血量显示（备用方式）:', `${currentHp}/${maxHp}`);
+        }
     }
 
     // 更新体力
@@ -4065,10 +4173,14 @@ RiceVillageManager.prototype.consumeQuestItems = function(quest) {
  * @param {Object} quest - 任务对象
  */
 RiceVillageManager.prototype.giveQuestRewards = function(quest) {
+    console.log(`🧪 [DEBUG] 开始给予任务奖励:`, quest.rewards);
+
     if (quest.rewards) {
         if (quest.rewards.exp) {
             // 使用完整的升级系统
+            console.log(`🧪 [DEBUG] 任务 ${quest.name} 准备给予 ${quest.rewards.exp} 经验`);
             this.gainExp(quest.rewards.exp);
+            console.log(`🧪 [DEBUG] 任务经验给予完成`);
             this.addDebugLog(`📈 获得经验: ${quest.rewards.exp}`);
         }
         if (quest.rewards.gold) {
@@ -4220,6 +4332,40 @@ RiceVillageManager.prototype.openWeaponShop = function() {
         shopHTML += `</div></div>`;
     }
 
+    // 血瓶分类
+    shopHTML += `
+        <div class="shop-category">
+            <h4>恢复道具</h4>
+            <div class="items-grid">
+    `;
+
+    // 血瓶物品
+    const healthPotion = {
+        name: '血瓶',
+        description: '恢复150点血量的神奇药水',
+        price: 30,
+        healAmount: 150
+    };
+
+    const canAffordPotion = playerFunds >= healthPotion.price;
+    const buttonClass = canAffordPotion ? 'buy-btn' : 'buy-btn disabled';
+
+    shopHTML += `
+        <div class="shop-item">
+            <div class="item-info">
+                <strong>${healthPotion.name}</strong>
+                <div class="item-stats">恢复: +${healthPotion.healAmount} 血量</div>
+                <div class="item-desc">${healthPotion.description}</div>
+                <div class="item-price">价格: ${healthPotion.price} 金币</div>
+            </div>
+            <button class="${buttonClass}" onclick="riceVillageManager.buyHealthPotion()" ${!canAffordPotion ? 'disabled' : ''}>
+                ${canAffordPotion ? '购买' : '金币不足'}
+            </button>
+        </div>
+    `;
+
+    shopHTML += `</div></div>`;
+
     shopHTML += `
             </div>
             <div class="shop-footer">
@@ -4230,6 +4376,89 @@ RiceVillageManager.prototype.openWeaponShop = function() {
     `;
 
     this.showShopWindow(shopHTML);
+};
+
+/**
+ * 购买血瓶
+ */
+RiceVillageManager.prototype.buyHealthPotion = function() {
+    if (!this._validateSystem()) return;
+
+    const player = this.core.gameData.player;
+    const potionPrice = 30;
+
+    // 检查金币是否足够
+    if (player.funds < potionPrice) {
+        alert('金币不足！需要30金币购买血瓶。');
+        return;
+    }
+
+    // 扣除金币
+    player.funds -= potionPrice;
+
+    // 添加血瓶到背包
+    if (this.core.inventorySystem) {
+        this.core.inventorySystem.addItem('血瓶', 1);
+        console.log('📦 血瓶已添加到背包');
+    }
+
+    console.log(`🛒 购买血瓶成功，花费${potionPrice}金币`);
+    this.addDebugLog(`🛒 购买血瓶成功，花费${potionPrice}金币`);
+
+    // 保存数据
+    this.core.saveGameData();
+
+    // 刷新商店界面
+    this.openWeaponShop();
+
+    // 更新玩家状态显示
+    this.updatePlayerStatus();
+};
+
+/**
+ * 使用血瓶
+ */
+RiceVillageManager.prototype.useHealthPotion = function() {
+    if (!this._validateSystem()) return;
+
+    const player = this.core.gameData.player;
+    const maxHp = player.stats?.maxHp || player.maxHp || 100;
+
+    // 检查是否已经满血
+    if (player.hp >= maxHp) {
+        alert('你的血量已经满了！无需使用血瓶。');
+        return;
+    }
+
+    // 检查背包中是否有血瓶
+    const inventory = this.core.inventorySystem.getAllItems();
+    const potionCount = inventory.questItems?.['血瓶'] || 0;
+
+    if (potionCount <= 0) {
+        alert('背包中没有血瓶！请到武器商店购买。');
+        return;
+    }
+
+    // 使用血瓶
+    const beforeHp = player.hp;
+    const healAmount = 150;
+    player.hp = Math.min(maxHp, player.hp + healAmount);
+    const actualHeal = player.hp - beforeHp;
+
+    // 从背包中移除血瓶
+    this.core.inventorySystem.removeItem('血瓶', 1);
+
+    console.log(`🧪 使用血瓶：血量从 ${beforeHp} 恢复到 ${player.hp}（+${actualHeal}）`);
+
+    // 显示恢复飘字
+    this.showPlayerHealFloatingText(`+${actualHeal}血量`);
+
+    // 更新显示
+    this.updatePlayerStatus();
+    this.core.saveGameData();
+
+    // 显示使用结果
+    this.addDebugLog(`🧪 使用血瓶，恢复${actualHeal}点血量`);
 };
 
 /**
@@ -4959,6 +5188,396 @@ RiceVillageManager.prototype.unlockFaceTeaRecipe = function() {
     this.core.saveGameData();
 
     console.log('🎉 面茶配方解锁完成！');
+};
+
+/**
+ * 调试：测试经验系统
+ */
+RiceVillageManager.prototype.debugTestExpSystem = function() {
+    console.log('🧪 ==================== 经验系统测试开始 ====================');
+
+    const player = this.core.gameData.player;
+
+    // 显示测试前状态
+    console.log('🧪 [测试前状态]', {
+        level: player.level,
+        exp: player.exp,
+        expType: typeof player.exp,
+        levelType: typeof player.level,
+        hp: player.hp,
+        power: player.power
+    });
+
+    // 测试1：给予少量经验
+    console.log('🧪 [测试1] 给予10经验...');
+    this.gainExp(10);
+
+    // 测试2：给予中等经验
+    console.log('🧪 [测试2] 给予50经验...');
+    this.gainExp(50);
+
+    // 测试3：给予大量经验（可能升级）
+    console.log('🧪 [测试3] 给予100经验...');
+    this.gainExp(100);
+
+    // 显示测试后状态
+    console.log('🧪 [测试后状态]', {
+        level: player.level,
+        exp: player.exp,
+        hp: player.hp,
+        power: player.power
+    });
+
+    console.log('🧪 ==================== 经验系统测试完成 ====================');
+
+    return {
+        level: player.level,
+        exp: player.exp,
+        hp: player.hp,
+        power: player.power
+    };
+};
+
+/**
+ * 调试：显示当前经验状态
+ */
+RiceVillageManager.prototype.debugExpStatus = function() {
+    const player = this.core.gameData.player;
+    const currentLevel = player.level || 1;
+    const currentExp = player.exp || 0;
+    const requiredExp = this.getExpRequiredForLevel(currentLevel);
+    const expToNext = Math.max(0, requiredExp - currentExp);
+
+    const status = {
+        level: currentLevel,
+        exp: currentExp,
+        requiredExp: requiredExp,
+        expToNext: expToNext,
+        progress: `${currentExp}/${requiredExp}`,
+        percentage: Math.floor((currentExp / requiredExp) * 100)
+    };
+
+    console.log('📊 当前经验状态:', status);
+    return status;
+};
+
+/**
+ * 怪物攻击玩家 - 按照重建指导文档实现
+ */
+RiceVillageManager.prototype.monsterAttackPlayer = function(monsterName, monster) {
+    const player = this.core.gameData.player;
+
+    // 计算怪物攻击力
+    const monsterAttack = monster.attack || 1;
+
+    // 计算玩家防御力（装备加成）
+    const playerDefense = player.stats?.defense || 0;
+
+    // 计算实际伤害（最少1点伤害）
+    const damage = Math.max(1, monsterAttack - playerDefense);
+
+    console.log(`🔥 ${monsterName} 攻击玩家: 攻击力${monsterAttack} - 防御力${playerDefense} = 伤害${damage}`);
+
+    // 扣除玩家血量
+    const beforeHp = player.hp;
+    player.hp = Math.max(0, player.hp - damage);
+
+    console.log(`💔 玩家受到${damage}点伤害，血量从${beforeHp}变为${player.hp}`);
+
+    // 显示伤害飘字（在玩家状态区域）
+    this.showPlayerDamageFloatingText(`-${damage}血量`);
+
+    // 更新玩家状态显示
+    this.updatePlayerStatus();
+
+    // 检查玩家是否死亡
+    if (player.hp <= 0) {
+        console.log('💀 玩家血量归零！');
+        this.handlePlayerDeath();
+    }
+
+    // 保存数据
+    this.core.saveGameData();
+};
+
+/**
+ * 处理玩家死亡
+ */
+RiceVillageManager.prototype.handlePlayerDeath = function() {
+    const player = this.core.gameData.player;
+
+    console.log('💀 玩家死亡处理');
+
+    // 复活玩家（恢复一半血量）
+    const maxHp = player.stats?.maxHp || 100;
+    player.hp = Math.floor(maxHp / 2);
+
+    // 显示死亡提示
+    this.showDialog('死亡提示', [
+        '你被怪物击败了！',
+        `血量恢复到 ${player.hp}/${maxHp}`,
+        '小心应对主动攻击型怪物！'
+    ], [
+        { text: '继续游戏', action: () => this.closeDialog() }
+    ]);
+
+    console.log(`🔄 玩家复活，血量恢复到 ${player.hp}/${maxHp}`);
+
+    // 更新显示
+    this.updatePlayerStatus();
+    this.core.saveGameData();
+};
+
+/**
+ * 显示玩家伤害飘字
+ */
+RiceVillageManager.prototype.showPlayerDamageFloatingText = function(text) {
+    // 找到玩家状态区域
+    const playerStatusElement = document.getElementById('player-status') ||
+                               document.querySelector('.player-info') ||
+                               document.querySelector('.status-panel');
+
+    if (!playerStatusElement) {
+        console.warn('未找到玩家状态元素，无法显示飘字');
+        return;
+    }
+
+    const rect = playerStatusElement.getBoundingClientRect();
+
+    // 创建飘字元素
+    const floatingText = document.createElement('div');
+    floatingText.style.cssText = `
+        position: fixed;
+        left: ${rect.left + rect.width / 2}px;
+        top: ${rect.top + rect.height / 2}px;
+        color: #ff4444;
+        font-size: 18px;
+        font-weight: bold;
+        pointer-events: none;
+        z-index: 9999;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        transform: translateX(-50%);
+        transition: all 1500ms ease-out;
+        background: rgba(255,68,68,0.2);
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 2px solid #ff4444;
+    `;
+    floatingText.textContent = text;
+
+    document.body.appendChild(floatingText);
+
+    // 动画效果
+    setTimeout(() => {
+        floatingText.style.top = `${rect.top - 50}px`;
+        floatingText.style.opacity = '0';
+    }, 100);
+
+    // 1.5秒后移除
+    setTimeout(() => {
+        if (floatingText.parentNode) {
+            floatingText.parentNode.removeChild(floatingText);
+        }
+    }, 1600);
+};
+
+/**
+ * 打坐恢复功能 - 20秒回满血
+ */
+RiceVillageManager.prototype.startMeditation = function() {
+    const player = this.core.gameData.player;
+    const maxHp = player.stats?.maxHp || player.maxHp || 100;
+
+    // 检查是否已经满血
+    if (player.hp >= maxHp) {
+        this.showDialog('打坐恢复', [
+            '你的血量已经满了！',
+            '无需打坐恢复。'
+        ], [
+            { text: '确定', action: () => this.closeDialog() }
+        ]);
+        return;
+    }
+
+    // 检查是否正在打坐
+    if (this.isMeditating) {
+        console.log('⚠️ 已在打坐中，无法重复打坐');
+        return;
+    }
+
+    console.log('🧘 开始打坐恢复...');
+    this.isMeditating = true;
+
+    // 显示打坐进度
+    this.showMeditationProgress();
+
+    // 20秒后恢复满血
+    setTimeout(() => {
+        const beforeHp = player.hp;
+        player.hp = maxHp;
+
+        console.log(`🧘 打坐完成！血量从 ${beforeHp} 恢复到 ${player.hp}`);
+
+        // 显示恢复提示
+        this.showPlayerHealFloatingText(`+${maxHp - beforeHp}血量`);
+
+        // 更新显示
+        this.updatePlayerStatus();
+        this.core.saveGameData();
+
+        // 重置打坐状态
+        this.isMeditating = false;
+
+        // 显示完成对话
+        this.showDialog('打坐恢复', [
+            '打坐完成！',
+            `血量已恢复到满值: ${player.hp}/${maxHp}`
+        ], [
+            { text: '确定', action: () => this.closeDialog() }
+        ]);
+
+    }, 20000); // 20秒
+};
+
+/**
+ * 显示打坐进度
+ */
+RiceVillageManager.prototype.showMeditationProgress = function() {
+    // 创建进度条容器
+    const progressContainer = document.createElement('div');
+    progressContainer.id = 'meditation-progress';
+    progressContainer.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 10000;
+        text-align: center;
+        min-width: 300px;
+    `;
+
+    progressContainer.innerHTML = `
+        <div style="margin-bottom: 15px;">🧘 正在打坐恢复...</div>
+        <div style="background: #333; border-radius: 10px; overflow: hidden; margin-bottom: 10px;">
+            <div id="meditation-bar" style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 20px; width: 0%; transition: width 0.1s;"></div>
+        </div>
+        <div id="meditation-time">剩余时间: 20秒</div>
+        <button onclick="cancelMeditation()" style="margin-top: 10px; padding: 5px 15px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">取消打坐</button>
+    `;
+
+    document.body.appendChild(progressContainer);
+
+    // 进度动画
+    let timeLeft = 20;
+    const progressBar = document.getElementById('meditation-bar');
+    const timeDisplay = document.getElementById('meditation-time');
+
+    const updateProgress = () => {
+        if (!this.isMeditating) {
+            // 打坐被取消，移除进度条
+            if (progressContainer.parentNode) {
+                progressContainer.parentNode.removeChild(progressContainer);
+            }
+            return;
+        }
+
+        const progress = ((20 - timeLeft) / 20) * 100;
+        progressBar.style.width = progress + '%';
+        timeDisplay.textContent = `剩余时间: ${timeLeft}秒`;
+
+        timeLeft--;
+
+        if (timeLeft >= 0) {
+            setTimeout(updateProgress, 1000);
+        } else {
+            // 打坐完成，移除进度条
+            if (progressContainer.parentNode) {
+                progressContainer.parentNode.removeChild(progressContainer);
+            }
+        }
+    };
+
+    updateProgress();
+};
+
+/**
+ * 取消打坐
+ */
+RiceVillageManager.prototype.cancelMeditation = function() {
+    if (this.isMeditating) {
+        this.isMeditating = false;
+        console.log('🧘 打坐被取消');
+
+        // 移除进度条
+        const progressContainer = document.getElementById('meditation-progress');
+        if (progressContainer && progressContainer.parentNode) {
+            progressContainer.parentNode.removeChild(progressContainer);
+        }
+    }
+};
+
+/**
+ * 显示玩家治疗飘字
+ */
+RiceVillageManager.prototype.showPlayerHealFloatingText = function(text) {
+    // 找到玩家状态区域
+    const playerStatusElement = document.getElementById('player-status') ||
+                               document.querySelector('.player-info') ||
+                               document.querySelector('.status-panel');
+
+    if (!playerStatusElement) {
+        console.warn('未找到玩家状态元素，无法显示飘字');
+        return;
+    }
+
+    const rect = playerStatusElement.getBoundingClientRect();
+
+    // 创建飘字元素
+    const floatingText = document.createElement('div');
+    floatingText.style.cssText = `
+        position: fixed;
+        left: ${rect.left + rect.width / 2}px;
+        top: ${rect.top + rect.height / 2}px;
+        color: #4CAF50;
+        font-size: 18px;
+        font-weight: bold;
+        pointer-events: none;
+        z-index: 9999;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        transform: translateX(-50%);
+        transition: all 1500ms ease-out;
+        background: rgba(76,175,80,0.2);
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 2px solid #4CAF50;
+    `;
+    floatingText.textContent = text;
+
+    document.body.appendChild(floatingText);
+
+    // 动画效果
+    setTimeout(() => {
+        floatingText.style.top = `${rect.top - 50}px`;
+        floatingText.style.opacity = '0';
+    }, 100);
+
+    // 1.5秒后移除
+    setTimeout(() => {
+        if (floatingText.parentNode) {
+            floatingText.parentNode.removeChild(floatingText);
+        }
+    }, 1600);
+};
+
+// 全局取消打坐函数
+window.cancelMeditation = function() {
+    if (window.riceVillageManager) {
+        window.riceVillageManager.cancelMeditation();
+    }
 };
 
 // 稻香村管理器实例将由HTML页面按正确时序创建

@@ -401,24 +401,83 @@ class UnifiedCoreSystem {
     }
     
     /**
-     * 合并游戏数据（用于版本兼容）
+     * 安全的数字转换 - 防止 NaN
+     */
+    safeParseNumber(value, defaultValue = 0) {
+        if (typeof value === 'number' && !isNaN(value)) {
+            return value;
+        }
+
+        if (typeof value === 'string') {
+            const parsed = parseFloat(value);
+            return isNaN(parsed) ? defaultValue : parsed;
+        }
+
+        return defaultValue;
+    }
+
+    /**
+     * 安全的整数转换 - 防止 NaN
+     */
+    safeParseInt(value, defaultValue = 0) {
+        if (typeof value === 'number' && !isNaN(value)) {
+            return Math.floor(value);
+        }
+
+        if (typeof value === 'string') {
+            const parsed = parseInt(value, 10);
+            return isNaN(parsed) ? defaultValue : parsed;
+        }
+
+        return defaultValue;
+    }
+
+    /**
+     * 验证并修复数值 - 防止 NaN 传播
+     */
+    validateAndFixNumber(value, defaultValue = 0, fieldName = 'unknown') {
+        if (typeof value === 'number' && !isNaN(value)) {
+            return value;
+        }
+
+        console.warn(`🔧 修复无效数值: ${fieldName} = ${value} → ${defaultValue}`);
+        return defaultValue;
+    }
+
+    /**
+     * 合并游戏数据（用于版本兼容）- 增强 NaN 检测
      */
     mergeGameData(defaultData, savedData) {
         // 深度合并，保留新版本的结构
         const merged = JSON.parse(JSON.stringify(defaultData));
-        
+
+        const self = this;
         function deepMerge(target, source) {
             for (const key in source) {
                 if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
                     if (!target[key]) target[key] = {};
                     deepMerge(target[key], source[key]);
                 } else {
-                    target[key] = source[key];
+                    // 检查并修复 NaN 值
+                    if (typeof source[key] === 'number' && isNaN(source[key])) {
+                        console.warn(`🔧 数据合并时发现 NaN: ${key} → 使用默认值`);
+                        // 保持目标值不变（使用默认数据的值）
+                    } else {
+                        target[key] = source[key];
+                    }
                 }
             }
         }
-        
+
         deepMerge(merged, savedData);
+
+        // 特别检查关键数值字段
+        if (merged.player) {
+            merged.player.exp = this.validateAndFixNumber(merged.player.exp, 0, 'player.exp');
+            merged.player.level = this.validateAndFixNumber(merged.player.level, 1, 'player.level');
+            merged.player.funds = this.validateAndFixNumber(merged.player.funds, 0, 'player.funds');
+        }
+
         return merged;
     }
     
@@ -2202,6 +2261,12 @@ window.fastTrackLiuYangQuests = function() {
 
     // 2. 提升玩家等级到10级
     if (player.level < 10) {
+        // 确保经验值是有效数字
+        if (typeof player.exp !== 'number' || isNaN(player.exp)) {
+            console.warn('🔧 修复无效经验值:', player.exp, '→ 0');
+            player.exp = 0;
+        }
+
         const expNeeded = 10 * 100 - player.exp; // 假设每级需要100经验
         player.exp += Math.max(expNeeded, 0);
         player.level = 10;
@@ -2269,3 +2334,57 @@ window.fastTrackLiuYangQuests = function() {
 };
 
 console.log('🚀 全局调试函数已注册：fastTrackLiuYangQuests() - 快速推进刘洋任务');
+
+// 全局 NaN 检测和修复工具
+window.detectAndFixNaN = function() {
+    console.log('🔍 开始全局 NaN 检测...');
+
+    const core = window.core;
+    if (!core || !core.gameData) {
+        console.error('❌ 核心系统未初始化');
+        return;
+    }
+
+    const gameData = core.gameData;
+    let nanCount = 0;
+    let fixedCount = 0;
+
+    // 递归检查对象中的 NaN 值
+    function checkForNaN(obj, path = '') {
+        for (const key in obj) {
+            const currentPath = path ? `${path}.${key}` : key;
+            const value = obj[key];
+
+            if (typeof value === 'number' && isNaN(value)) {
+                nanCount++;
+                console.warn(`🚨 发现 NaN: ${currentPath} = ${value}`);
+
+                // 尝试修复关键字段
+                if (key === 'exp' || key === 'level' || key === 'funds' || key === 'hp' || key === 'power') {
+                    const defaultValue = key === 'level' ? 1 : 0;
+                    obj[key] = defaultValue;
+                    fixedCount++;
+                    console.log(`🔧 已修复: ${currentPath} → ${defaultValue}`);
+                }
+            } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                checkForNaN(value, currentPath);
+            }
+        }
+    }
+
+    checkForNaN(gameData);
+
+    if (nanCount > 0) {
+        console.log(`🔍 NaN 检测完成: 发现 ${nanCount} 个 NaN 值，修复 ${fixedCount} 个`);
+        if (fixedCount > 0) {
+            core.saveGameData();
+            console.log('💾 已保存修复后的数据');
+        }
+    } else {
+        console.log('✅ 未发现 NaN 值，数据完整');
+    }
+
+    return { found: nanCount, fixed: fixedCount };
+};
+
+console.log('🔧 全局调试函数已注册：detectAndFixNaN() - 检测和修复 NaN 值');

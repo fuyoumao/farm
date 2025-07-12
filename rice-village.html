@@ -59,7 +59,12 @@
                     <td id="player-gender">未设置</td>
                     <td id="player-level">1级</td>
                     <td id="player-exp">0/100</td>
-                    <td id="player-hp">100/100</td>
+                    <td id="player-hp">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="player-hp-text">100/100</span>
+                            <button onclick="startMeditation()" style="background: white; color: #333; border: 1px solid #ccc; padding: 2px 6px; border-radius: 3px; font-size: 12px; cursor: pointer; white-space: nowrap;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='white'">打坐</button>
+                        </div>
+                    </td>
                     <td id="player-stamina">100/100</td>
                     <td id="player-power">5</td>
                     <td id="player-funds">1000 🪙</td>
@@ -558,6 +563,87 @@
                 document.body.style.overflow = '';
                 console.log('简单弹窗已关闭');
             }
+        }
+
+        // 全局调试函数：检查系统状态
+        function debugSystemStatus() {
+            console.log('🔍 系统状态检查:');
+            console.log('- window.core:', !!window.core);
+            console.log('- window.riceVillageManager:', !!window.riceVillageManager);
+            console.log('- 管理器类型:', typeof window.riceVillageManager);
+
+            if (window.riceVillageManager) {
+                console.log('- 管理器方法:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.riceVillageManager)));
+                console.log('- debugTestExpSystem方法:', typeof window.riceVillageManager.debugTestExpSystem);
+            }
+
+            return {
+                core: !!window.core,
+                manager: !!window.riceVillageManager,
+                managerType: typeof window.riceVillageManager
+            };
+        }
+
+        // 全局调试函数：测试经验系统
+        function debugTestExp() {
+            console.log('🧪 开始经验系统测试...');
+
+            if (!window.riceVillageManager) {
+                console.error('❌ 稻香村管理器未初始化');
+                debugSystemStatus();
+                return;
+            }
+
+            if (typeof window.riceVillageManager.debugTestExpSystem !== 'function') {
+                console.error('❌ debugTestExpSystem 方法不存在');
+                console.log('可用方法:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.riceVillageManager)));
+                return;
+            }
+
+            return window.riceVillageManager.debugTestExpSystem();
+        }
+
+        // 全局调试函数：查看经验状态
+        function debugExpStatus() {
+            if (!window.riceVillageManager) {
+                console.error('❌ 稻香村管理器未初始化');
+                debugSystemStatus();
+                return;
+            }
+
+            if (typeof window.riceVillageManager.debugExpStatus !== 'function') {
+                console.error('❌ debugExpStatus 方法不存在');
+                return;
+            }
+
+            return window.riceVillageManager.debugExpStatus();
+        }
+
+        // 全局调试函数：手动给予经验
+        function debugGiveExp(amount) {
+            if (!window.riceVillageManager) {
+                console.error('❌ 稻香村管理器未初始化');
+                debugSystemStatus();
+                return;
+            }
+
+            if (typeof window.riceVillageManager.gainExp !== 'function') {
+                console.error('❌ gainExp 方法不存在');
+                return;
+            }
+
+            console.log(`🧪 手动给予 ${amount} 经验`);
+            return window.riceVillageManager.gainExp(amount);
+        }
+
+        // 打坐恢复功能
+        function startMeditation() {
+            if (!window.riceVillageManager) {
+                console.error('❌ 稻香村管理器未初始化');
+                return;
+            }
+
+            window.riceVillageManager.startMeditation();
         }
     </script>
 </body>
